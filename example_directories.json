@@ -1,0 +1,152 @@
+[
+  {
+    "name": "Product Hunt",
+    "url": "https://www.producthunt.com",
+    "submission_url": "https://www.producthunt.com/posts/new",
+    "status": "active",
+    "domain_authority": 92,
+    "category": "Tech Discovery",
+    "requires_approval": true,
+    "estimated_approval_time": "24 hours"
+  },
+  {
+    "name": "BetaList",
+    "url": "https://betalist.com",
+    "submission_url": "https://betalist.com/submit",
+    "status": "active",
+    "domain_authority": 65,
+    "category": "Startup Discovery",
+    "requires_approval": true,
+    "estimated_approval_time": "1-2 weeks"
+  },
+  {
+    "name": "Alternative.to",
+    "url": "https://alternativeto.net",
+    "submission_url": "https://alternativeto.net/software/new/",
+    "status": "active",
+    "domain_authority": 81,
+    "category": "Software Alternatives",
+    "requires_approval": true,
+    "estimated_approval_time": "2-3 days"
+  },
+  {
+    "name": "SaaSHub",
+    "url": "https://www.saashub.com",
+    "submission_url": "https://www.saashub.com/submit-software",
+    "status": "active",
+    "domain_authority": 58,
+    "category": "SaaS Directory",
+    "requires_approval": true,
+    "estimated_approval_time": "1 week"
+  },
+  {
+    "name": "Capterra",
+    "url": "https://www.capterra.com",
+    "submission_url": "https://www.capterra.com/vendors/sign-up",
+    "status": "active",
+    "domain_authority": 93,
+    "category": "Software Reviews",
+    "requires_approval": true,
+    "estimated_approval_time": "1-2 weeks"
+  },
+  {
+    "name": "G2",
+    "url": "https://www.g2.com",
+    "submission_url": "https://www.g2.com/products/new",
+    "status": "active",
+    "domain_authority": 89,
+    "category": "Software Reviews",
+    "requires_approval": true,
+    "estimated_approval_time": "3-5 days"
+  },
+  {
+    "name": "GetApp",
+    "url": "https://www.getapp.com",
+    "submission_url": "https://www.getapp.com/add-your-app/",
+    "status": "active",
+    "domain_authority": 79,
+    "category": "App Discovery",
+    "requires_approval": true,
+    "estimated_approval_time": "1 week"
+  },
+  {
+    "name": "SourceForge",
+    "url": "https://sourceforge.net",
+    "submission_url": "https://sourceforge.net/p/forge/documentation/Create%20a%20Project/",
+    "status": "active",
+    "domain_authority": 91,
+    "category": "Open Source",
+    "requires_approval": false,
+    "estimated_approval_time": "Instant"
+  },
+  {
+    "name": "StartupRanking",
+    "url": "https://www.startupranking.com",
+    "submission_url": "https://www.startupranking.com/submit",
+    "status": "active",
+    "domain_authority": 55,
+    "category": "Startup Directory",
+    "requires_approval": false,
+    "estimated_approval_time": "Instant"
+  },
+  {
+    "name": "TrustRadius",
+    "url": "https://www.trustradius.com",
+    "submission_url": "https://www.trustradius.com/vendor/sign-up",
+    "status": "active",
+    "domain_authority": 76,
+    "category": "Software Reviews",
+    "requires_approval": true,
+    "estimated_approval_time": "1-2 weeks"
+  },
+  {
+    "name": "Software Advice",
+    "url": "https://www.softwareadvice.com",
+    "submission_url": "https://www.softwareadvice.com/vendors/",
+    "status": "active",
+    "domain_authority": 83,
+    "category": "Software Reviews",
+    "requires_approval": true,
+    "estimated_approval_time": "1 week"
+  },
+  {
+    "name": "Slant",
+    "url": "https://www.slant.co",
+    "submission_url": "https://www.slant.co/topics/new",
+    "status": "active",
+    "domain_authority": 64,
+    "category": "Product Recommendations",
+    "requires_approval": false,
+    "estimated_approval_time": "Instant"
+  },
+  {
+    "name": "SaaSworthy",
+    "url": "https://www.saasworthy.com",
+    "submission_url": "https://www.saasworthy.com/list-your-product",
+    "status": "active",
+    "domain_authority": 52,
+    "category": "SaaS Directory",
+    "requires_approval": true,
+    "estimated_approval_time": "1 week"
+  },
+  {
+    "name": "Stackshare",
+    "url": "https://stackshare.io",
+    "submission_url": "https://stackshare.io/tools/new",
+    "status": "active",
+    "domain_authority": 77,
+    "category": "Developer Tools",
+    "requires_approval": false,
+    "estimated_approval_time": "Instant"
+  },
+  {
+    "name": "AppSumo",
+    "url": "https://appsumo.com",
+    "submission_url": "https://sell.appsumo.com/",
+    "status": "testing",
+    "domain_authority": 82,
+    "category": "Software Deals",
+    "requires_approval": true,
+    "estimated_approval_time": "2-4 weeks"
+  }
+]
