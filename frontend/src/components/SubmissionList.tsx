@@ -1,22 +1,35 @@
-import React, { useState, useMemo } from 'react';
-import { useSubmissions, useRetrySubmission } from '../store';
-import { 
-  RefreshCw, Filter, Search, ExternalLink, 
-  CheckCircle, XCircle, Clock, Send, X 
-} from 'lucide-react';
-import type { SubmissionStatus, SubmissionWithDetails } from '../types/schema';
-import { format } from 'date-fns';
-import { useDebounce } from '../utils/use-debounce';
+import { format } from "date-fns";
+import {
+  CheckCircle,
+  Clock,
+  ExternalLink,
+  Filter,
+  RefreshCw,
+  Search,
+  Send,
+  X,
+  XCircle,
+} from "lucide-react";
+import type React from "react";
+import { useMemo, useState } from "react";
+import { useRetrySubmission, useSubmissions } from "../store";
+import type { SubmissionStatus, SubmissionWithDetails } from "../types/schema";
+import { useDebounce } from "../utils/use-debounce";
 
 const SubmissionList: React.FC = () => {
-  const [statusFilter, setStatusFilter] = useState<SubmissionStatus | ''>('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSubmission, setSelectedSubmission] = useState<SubmissionWithDetails | null>(null);
-  
+  const [statusFilter, setStatusFilter] = useState<SubmissionStatus | "">("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedSubmission, setSelectedSubmission] =
+    useState<SubmissionWithDetails | null>(null);
+
   const debouncedSearch = useDebounce(searchQuery, 300);
-  
-  const { data: submissions = [], isLoading, refetch } = useSubmissions({
-    status: statusFilter || undefined
+
+  const {
+    data: submissions = [],
+    isLoading,
+    refetch,
+  } = useSubmissions({
+    status: statusFilter || undefined,
   });
 
   const retryMutation = useRetrySubmission();
@@ -25,17 +38,18 @@ const SubmissionList: React.FC = () => {
     try {
       await retryMutation.mutateAsync(submissionId);
     } catch (error) {
-      console.error('Error retrying submission:', error);
+      console.error("Error retrying submission:", error);
     }
   };
 
   const filteredSubmissions = useMemo(() => {
     if (!debouncedSearch) return submissions;
-    
+
     const searchLower = debouncedSearch.toLowerCase();
-    return submissions.filter(sub => 
-      sub.directory.name.toLowerCase().includes(searchLower) ||
-      sub.saas_product.name.toLowerCase().includes(searchLower)
+    return submissions.filter(
+      (sub) =>
+        sub.directory.name.toLowerCase().includes(searchLower) ||
+        sub.saas_product.name.toLowerCase().includes(searchLower),
     );
   }, [submissions, debouncedSearch]);
 
@@ -45,7 +59,9 @@ const SubmissionList: React.FC = () => {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Submissions</h1>
-          <p className="text-gray-600 mt-2">Track all your directory submissions</p>
+          <p className="text-gray-600 mt-2">
+            Track all your directory submissions
+          </p>
         </div>
 
         {/* Filters */}
@@ -68,7 +84,9 @@ const SubmissionList: React.FC = () => {
               <Filter className="h-5 w-5 text-gray-600" />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as SubmissionStatus | '')}
+                onChange={(e) =>
+                  setStatusFilter(e.target.value as SubmissionStatus | "")
+                }
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Status</option>
@@ -82,11 +100,14 @@ const SubmissionList: React.FC = () => {
 
             {/* Refresh */}
             <button
+              type="button"
               onClick={() => refetch()}
               disabled={isLoading}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+              />
               Refresh
             </button>
           </div>
@@ -126,7 +147,10 @@ const SubmissionList: React.FC = () => {
                   </tr>
                 ) : filteredSubmissions.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                    <td
+                      colSpan={5}
+                      className="px-6 py-12 text-center text-gray-500"
+                    >
                       No submissions found
                     </td>
                   </tr>
@@ -149,16 +173,20 @@ const SubmissionList: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(submission.status)}`}>
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(submission.status)}`}
+                        >
                           <StatusIcon status={submission.status} />
                           {submission.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {submission.submitted_at 
-                          ? format(new Date(submission.submitted_at), 'MMM dd, yyyy')
-                          : '-'
-                        }
+                        {submission.submitted_at
+                          ? format(
+                              new Date(submission.submitted_at),
+                              "MMM dd, yyyy",
+                            )
+                          : "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-2">
@@ -173,17 +201,21 @@ const SubmissionList: React.FC = () => {
                               <ExternalLink className="h-4 w-4" />
                             </a>
                           )}
-                          {submission.status === 'failed' && (
+                          {submission.status === "failed" && (
                             <button
+                              type="button"
                               onClick={() => handleRetry(submission.id)}
                               disabled={retryMutation.isPending}
                               className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
                               title="Retry submission"
                             >
-                              <RefreshCw className={`h-4 w-4 ${retryMutation.isPending ? 'animate-spin' : ''}`} />
+                              <RefreshCw
+                                className={`h-4 w-4 ${retryMutation.isPending ? "animate-spin" : ""}`}
+                              />
                             </button>
                           )}
                           <button
+                            type="button"
                             onClick={() => setSelectedSubmission(submission)}
                             className="text-gray-600 hover:text-gray-900"
                           >
@@ -213,16 +245,16 @@ const SubmissionList: React.FC = () => {
 
 const StatusIcon: React.FC<{ status: SubmissionStatus }> = ({ status }) => {
   const iconClass = "h-3 w-3";
-  
+
   switch (status) {
-    case 'approved':
+    case "approved":
       return <CheckCircle className={iconClass} />;
-    case 'submitted':
+    case "submitted":
       return <Send className={iconClass} />;
-    case 'pending':
+    case "pending":
       return <Clock className={iconClass} />;
-    case 'failed':
-    case 'rejected':
+    case "failed":
+    case "rejected":
       return <XCircle className={iconClass} />;
     default:
       return null;
@@ -231,17 +263,17 @@ const StatusIcon: React.FC<{ status: SubmissionStatus }> = ({ status }) => {
 
 const getStatusColor = (status: SubmissionStatus): string => {
   switch (status) {
-    case 'approved':
-      return 'bg-green-100 text-green-800';
-    case 'submitted':
-      return 'bg-blue-100 text-blue-800';
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'failed':
-    case 'rejected':
-      return 'bg-red-100 text-red-800';
+    case "approved":
+      return "bg-green-100 text-green-800";
+    case "submitted":
+      return "bg-blue-100 text-blue-800";
+    case "pending":
+      return "bg-yellow-100 text-yellow-800";
+    case "failed":
+    case "rejected":
+      return "bg-red-100 text-red-800";
     default:
-      return 'bg-gray-100 text-gray-800';
+      return "bg-gray-100 text-gray-800";
   }
 };
 
@@ -250,14 +282,20 @@ interface SubmissionDetailsModalProps {
   onClose: () => void;
 }
 
-const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({ submission, onClose }) => {
+const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({
+  submission,
+  onClose,
+}) => {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
-            <h2 className="text-2xl font-bold text-gray-900">Submission Details</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Submission Details
+            </h2>
             <button
+              type="button"
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"
             >
@@ -284,7 +322,9 @@ const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({ submiss
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Status
               </label>
-              <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(submission.status)}`}>
+              <span
+                className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(submission.status)}`}
+              >
                 {submission.status}
               </span>
             </div>
@@ -333,7 +373,8 @@ const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({ submiss
                 <div className="bg-red-50 rounded p-3 text-sm text-red-800 max-h-40 overflow-y-auto">
                   {submission.error_log.map((error, i) => (
                     <div key={i} className="mb-2">
-                      <span className="font-medium">{error.timestamp}</span>: {error.error}
+                      <span className="font-medium">{error.timestamp}</span>:{" "}
+                      {error.error}
                     </div>
                   ))}
                 </div>
@@ -342,6 +383,7 @@ const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({ submiss
 
             <div className="pt-4 flex justify-end gap-2">
               <button
+                type="button"
                 onClick={onClose}
                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
               >

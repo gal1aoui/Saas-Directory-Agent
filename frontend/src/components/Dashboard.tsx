@@ -1,12 +1,19 @@
-import React from 'react';
-import { useDashboardStats, useSubmissions } from '../store';
-import { 
-  CheckCircle, XCircle, Clock, Send, TrendingUp, 
-  Database, Globe, AlertCircle, type LucideIcon 
-} from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import type { SubmissionStatus } from '../types/schema';
-import { format } from 'date-fns';
+import { format } from "date-fns";
+import {
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Database,
+  Globe,
+  type LucideIcon,
+  Send,
+  TrendingUp,
+  XCircle,
+} from "lucide-react";
+import type React from "react";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { useDashboardStats, useSubmissions } from "../store";
+import type { SubmissionStatus } from "../types/schema";
 
 interface StatCard {
   title: string;
@@ -25,8 +32,14 @@ interface ChartData {
 }
 
 const Dashboard: React.FC = () => {
-  const { data: stats, isLoading: statsLoading, refetch: refetchStats, error: statsError } = useDashboardStats();
-  const { data: recentSubmissions = [], isLoading: submissionsLoading } = useSubmissions({ limit: 10 });
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    refetch: refetchStats,
+    error: statsError,
+  } = useDashboardStats();
+  const { data: recentSubmissions = [], isLoading: submissionsLoading } =
+    useSubmissions({ limit: 10 });
 
   const loading = statsLoading || submissionsLoading;
 
@@ -45,6 +58,7 @@ const Dashboard: React.FC = () => {
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <p className="text-gray-600">Failed to load dashboard data</p>
           <button
+            type="button"
             onClick={() => refetchStats()}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
@@ -57,52 +71,54 @@ const Dashboard: React.FC = () => {
 
   const statCards: StatCard[] = [
     {
-      title: 'Total Submissions',
+      title: "Total Submissions",
       value: stats.total_submissions,
       icon: Send,
-      color: 'blue',
-      bgColor: 'bg-blue-50',
-      iconColor: 'text-blue-600'
+      color: "blue",
+      bgColor: "bg-blue-50",
+      iconColor: "text-blue-600",
     },
     {
-      title: 'Approved',
+      title: "Approved",
       value: stats.approved_submissions,
       icon: CheckCircle,
-      color: 'green',
-      bgColor: 'bg-green-50',
-      iconColor: 'text-green-600'
+      color: "green",
+      bgColor: "bg-green-50",
+      iconColor: "text-green-600",
     },
     {
-      title: 'Pending',
+      title: "Pending",
       value: stats.pending_submissions,
       icon: Clock,
-      color: 'yellow',
-      bgColor: 'bg-yellow-50',
-      iconColor: 'text-yellow-600'
+      color: "yellow",
+      bgColor: "bg-yellow-50",
+      iconColor: "text-yellow-600",
     },
     {
-      title: 'Failed',
+      title: "Failed",
       value: stats.failed_submissions,
       icon: XCircle,
-      color: 'red',
-      bgColor: 'bg-red-50',
-      iconColor: 'text-red-600'
-    }
+      color: "red",
+      bgColor: "bg-red-50",
+      iconColor: "text-red-600",
+    },
   ];
 
   const chartData: ChartData[] = [
-    { name: 'Approved', value: stats.approved_submissions, color: '#10b981' },
-    { name: 'Submitted', value: stats.submitted_submissions, color: '#3b82f6' },
-    { name: 'Pending', value: stats.pending_submissions, color: '#f59e0b' },
-    { name: 'Failed', value: stats.failed_submissions, color: '#ef4444' }
-  ].filter(item => item.value > 0);
+    { name: "Approved", value: stats.approved_submissions, color: "#10b981" },
+    { name: "Submitted", value: stats.submitted_submissions, color: "#3b82f6" },
+    { name: "Pending", value: stats.pending_submissions, color: "#f59e0b" },
+    { name: "Failed", value: stats.failed_submissions, color: "#ef4444" },
+  ].filter((item) => item.value > 0);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">Overview of your SaaS directory submissions</p>
+          <p className="text-gray-600 mt-2">
+            Overview of your SaaS directory submissions
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -111,7 +127,9 @@ const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                  <p className="text-3xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-3xl font-bold text-gray-900">
+                    {stat.value}
+                  </p>
                 </div>
                 <div className={`${stat.bgColor} p-3 rounded-lg`}>
                   <stat.icon className={`h-6 w-6 ${stat.iconColor}`} />
@@ -124,7 +142,9 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Success Rate</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Success Rate
+              </h2>
               <TrendingUp className="h-5 w-5 text-green-600" />
             </div>
             <div className="flex items-end">
@@ -139,7 +159,9 @@ const Dashboard: React.FC = () => {
 
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Directories</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Directories
+              </h2>
               <Globe className="h-5 w-5 text-blue-600" />
             </div>
             <div className="space-y-3">
@@ -172,7 +194,9 @@ const Dashboard: React.FC = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent ?? 0 * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name} ${(percent ?? 0 * 100).toFixed(0)}%`
+                    }
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
@@ -200,8 +224,8 @@ const Dashboard: React.FC = () => {
             </h2>
             <div className="space-y-3">
               {recentSubmissions.slice(0, 5).map((submission) => (
-                <div 
-                  key={submission.id} 
+                <div
+                  key={submission.id}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                 >
                   <div className="flex items-center space-x-3">
@@ -211,11 +235,16 @@ const Dashboard: React.FC = () => {
                         {submission.directory.name}
                       </p>
                       <p className="text-xs text-gray-600">
-                        {format(new Date(submission.created_at), 'MMM dd, yyyy')}
+                        {format(
+                          new Date(submission.created_at),
+                          "MMM dd, yyyy",
+                        )}
                       </p>
                     </div>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(submission.status)}`}>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${getStatusColor(submission.status)}`}
+                  >
                     {submission.status}
                   </span>
                 </div>
@@ -236,17 +265,17 @@ const Dashboard: React.FC = () => {
 
 const StatusIcon: React.FC<{ status: SubmissionStatus }> = ({ status }) => {
   const iconClass = "h-5 w-5";
-  
+
   switch (status) {
-    case 'approved':
+    case "approved":
       return <CheckCircle className={`${iconClass} text-green-600`} />;
-    case 'submitted':
+    case "submitted":
       return <Send className={`${iconClass} text-blue-600`} />;
-    case 'pending':
+    case "pending":
       return <Clock className={`${iconClass} text-yellow-600`} />;
-    case 'failed':
+    case "failed":
       return <XCircle className={`${iconClass} text-red-600`} />;
-    case 'rejected':
+    case "rejected":
       return <XCircle className={`${iconClass} text-red-600`} />;
     default:
       return <AlertCircle className={`${iconClass} text-gray-600`} />;
@@ -255,17 +284,17 @@ const StatusIcon: React.FC<{ status: SubmissionStatus }> = ({ status }) => {
 
 const getStatusColor = (status: SubmissionStatus): string => {
   switch (status) {
-    case 'approved':
-      return 'bg-green-100 text-green-800';
-    case 'submitted':
-      return 'bg-blue-100 text-blue-800';
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800';
-    case 'failed':
-    case 'rejected':
-      return 'bg-red-100 text-red-800';
+    case "approved":
+      return "bg-green-100 text-green-800";
+    case "submitted":
+      return "bg-blue-100 text-blue-800";
+    case "pending":
+      return "bg-yellow-100 text-yellow-800";
+    case "failed":
+    case "rejected":
+      return "bg-red-100 text-red-800";
     default:
-      return 'bg-gray-100 text-gray-800';
+      return "bg-gray-100 text-gray-800";
   }
 };
 

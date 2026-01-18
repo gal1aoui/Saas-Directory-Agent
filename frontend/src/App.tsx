@@ -1,6 +1,6 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import Layout from "./components/layout/Layout";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 export default function App() {
   const queryClient = new QueryClient({

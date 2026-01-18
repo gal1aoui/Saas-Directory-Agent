@@ -1,19 +1,15 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 // Enums
 export const SubmissionStatusEnum = z.enum([
-  'pending',
-  'submitted',
-  'approved',
-  'rejected',
-  'failed'
+  "pending",
+  "submitted",
+  "approved",
+  "rejected",
+  "failed",
 ]);
 
-export const DirectoryStatusEnum = z.enum([
-  'active',
-  'inactive',
-  'testing'
-]);
+export const DirectoryStatusEnum = z.enum(["active", "inactive", "testing"]);
 
 export type SubmissionStatus = z.infer<typeof SubmissionStatusEnum>;
 export type DirectoryStatus = z.infer<typeof DirectoryStatusEnum>;
@@ -21,43 +17,48 @@ export type DirectoryStatus = z.infer<typeof DirectoryStatusEnum>;
 // SaaS Product Schemas
 export const SaasProductSchema = z.object({
   id: z.number(),
-  name: z.string().min(1, 'Name is required'),
-  website_url: z.url('Must be a valid URL'),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
+  name: z.string().min(1, "Name is required"),
+  website_url: z.url("Must be a valid URL"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
   short_description: z.string().max(500).optional().nullable(),
   category: z.string().optional().nullable(),
   logo_url: z.url().optional().nullable(),
-  contact_email: z.email('Must be a valid email'),
+  contact_email: z.email("Must be a valid email"),
   tagline: z.string().max(255).optional().nullable(),
   pricing_model: z.string().optional().nullable(),
   features: z.array(z.string()).optional().nullable(),
-  social_links: z.object({
-    twitter: z.string().optional(),
-    facebook: z.string().optional(),
-    linkedin: z.string().optional(),
-    github: z.string().optional()
-  }).optional().nullable(),
+  social_links: z
+    .object({
+      twitter: z.string().optional(),
+      facebook: z.string().optional(),
+      linkedin: z.string().optional(),
+      github: z.string().optional(),
+    })
+    .optional()
+    .nullable(),
   created_at: z.string(),
-  updated_at: z.string()
+  updated_at: z.string(),
 });
 
 export const SaasProductCreateSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(255),
-  website_url: z.url('Must be a valid URL'),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
+  name: z.string().min(1, "Name is required").max(255),
+  website_url: z.url("Must be a valid URL"),
+  description: z.string().min(10, "Description must be at least 10 characters"),
   short_description: z.string().max(500).optional(),
   category: z.string().optional(),
-  logo_url: z.url('Must be a valid URL').optional(),
-  contact_email: z.email('Must be a valid email'),
+  logo_url: z.url("Must be a valid URL").optional(),
+  contact_email: z.email("Must be a valid email"),
   tagline: z.string().max(255).optional(),
   pricing_model: z.string().optional(),
   features: z.array(z.string()).optional(),
-  social_links: z.object({
-    twitter: z.url().optional(),
-    linkedin: z.url().optional(),
-    facebook: z.url().optional(),
-    github: z.url().optional()
-  }).optional()
+  social_links: z
+    .object({
+      twitter: z.url().optional(),
+      linkedin: z.url().optional(),
+      facebook: z.url().optional(),
+      github: z.url().optional(),
+    })
+    .optional(),
 });
 
 export const SaasProductUpdateSchema = SaasProductCreateSchema.partial();
@@ -69,8 +70,8 @@ export type SaasProductUpdate = z.infer<typeof SaasProductUpdateSchema>;
 // Directory Schemas
 export const DirectorySchema = z.object({
   id: z.number(),
-  name: z.string().min(1, 'Name is required'),
-  url: z.url('Must be a valid URL'),
+  name: z.string().min(1, "Name is required"),
+  url: z.url("Must be a valid URL"),
   submission_url: z.url().optional().nullable(),
   status: DirectoryStatusEnum,
   domain_authority: z.number().int().min(0).max(100).optional().nullable(),
@@ -82,18 +83,18 @@ export const DirectorySchema = z.object({
   detected_form_structure: z.array(z.any()).optional().nullable(),
   last_form_detection: z.string().optional().nullable(),
   created_at: z.string(),
-  updated_at: z.string()
+  updated_at: z.string(),
 });
 
 export const DirectoryCreateSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(255),
-  url: z.url('Must be a valid URL'),
-  submission_url: z.url('Must be a valid URL').optional(),
+  name: z.string().min(1, "Name is required").max(255),
+  url: z.url("Must be a valid URL"),
+  submission_url: z.url("Must be a valid URL").optional(),
   status: DirectoryStatusEnum.optional(),
   domain_authority: z.number().int().min(0).max(100).optional(),
   category: z.string().optional(),
   requires_approval: z.boolean().optional(),
-  estimated_approval_time: z.string().optional()
+  estimated_approval_time: z.string().optional(),
 });
 
 export const DirectoryUpdateSchema = DirectoryCreateSchema.partial();
@@ -117,29 +118,36 @@ export const SubmissionSchema = z.object({
   retry_count: z.number().int(),
   max_retries: z.number().int(),
   last_retry_at: z.string().optional().nullable(),
-  error_log: z.array(z.object({
-    timestamp: z.string(),
-    error: z.string()
-  })).optional().nullable(),
+  error_log: z
+    .array(
+      z.object({
+        timestamp: z.string(),
+        error: z.string(),
+      }),
+    )
+    .optional()
+    .nullable(),
   detected_fields: z.array(z.any()).optional().nullable(),
   form_screenshot_url: z.string().optional().nullable(),
   created_at: z.string(),
-  updated_at: z.string()
+  updated_at: z.string(),
 });
 
 export const SubmissionWithDetailsSchema = SubmissionSchema.extend({
   saas_product: SaasProductSchema,
-  directory: DirectorySchema
+  directory: DirectorySchema,
 });
 
 export const SubmissionCreateSchema = z.object({
   saas_product_id: z.number().int().positive(),
-  directory_id: z.number().int().positive()
+  directory_id: z.number().int().positive(),
 });
 
 export const BulkSubmissionRequestSchema = z.object({
   saas_product_id: z.number().int().positive(),
-  directory_ids: z.array(z.number().int().positive()).min(1, 'Select at least one directory')
+  directory_ids: z
+    .array(z.number().int().positive())
+    .min(1, "Select at least one directory"),
 });
 
 export type Submission = z.infer<typeof SubmissionSchema>;
@@ -156,7 +164,7 @@ export const DashboardStatsSchema = z.object({
   failed_submissions: z.number().int(),
   success_rate: z.number(),
   total_directories: z.number().int(),
-  active_directories: z.number().int()
+  active_directories: z.number().int(),
 });
 
 export type DashboardStats = z.infer<typeof DashboardStatsSchema>;

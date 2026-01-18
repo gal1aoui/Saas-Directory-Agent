@@ -1,19 +1,32 @@
-import React, { useState } from 'react';
-import { useDirectories, useDeleteDirectory, useCreateDirectory, useUpdateDirectory } from '../store';
-import { useForm, type SubmitHandler } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Plus, Edit, Trash2, X, Save, Globe } from 'lucide-react';
-import { type Directory, type DirectoryCreate, type DirectoryStatus, DirectoryCreateSchema } from '../types/schema';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Edit, Globe, Plus, Save, Trash2, X } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import { type SubmitHandler, useForm } from "react-hook-form";
+import {
+  useCreateDirectory,
+  useDeleteDirectory,
+  useDirectories,
+  useUpdateDirectory,
+} from "../store";
+import {
+  type Directory,
+  type DirectoryCreate,
+  DirectoryCreateSchema,
+  type DirectoryStatus,
+} from "../types/schema";
 
 const DirectoryManager: React.FC = () => {
-  const [statusFilter, setStatusFilter] = useState<DirectoryStatus | ''>('');
+  const [statusFilter, setStatusFilter] = useState<DirectoryStatus | "">("");
   const { data: directories = [], isLoading } = useDirectories({
-    status: statusFilter || undefined
+    status: statusFilter || undefined,
   });
   const deleteMutation = useDeleteDirectory();
-  
+
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingDirectory, setEditingDirectory] = useState<Directory | null>(null);
+  const [editingDirectory, setEditingDirectory] = useState<Directory | null>(
+    null,
+  );
 
   const handleEdit = (directory: Directory) => {
     setEditingDirectory(directory);
@@ -21,12 +34,12 @@ const DirectoryManager: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this directory?')) return;
-    
+    if (!confirm("Are you sure you want to delete this directory?")) return;
+
     try {
       await deleteMutation.mutateAsync(id);
     } catch (error) {
-      console.error('Error deleting directory:', error);
+      console.error("Error deleting directory:", error);
     }
   };
 
@@ -56,7 +69,9 @@ const DirectoryManager: React.FC = () => {
           <div className="flex gap-2">
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as DirectoryStatus | '')}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as DirectoryStatus | "")
+              }
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Status</option>
@@ -65,6 +80,7 @@ const DirectoryManager: React.FC = () => {
               <option value="testing">Testing</option>
             </select>
             <button
+              type="button"
               onClick={() => setIsFormOpen(true)}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
@@ -84,6 +100,7 @@ const DirectoryManager: React.FC = () => {
             <Globe className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-500 mb-4">No directories yet</p>
             <button
+              type="button"
               onClick={() => setIsFormOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
@@ -136,12 +153,14 @@ const DirectoryManager: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(directory.status)}`}>
+                        <span
+                          className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(directory.status)}`}
+                        >
                           {directory.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {directory.domain_authority || '-'}
+                        {directory.domain_authority || "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {directory.total_submissions}
@@ -152,11 +171,15 @@ const DirectoryManager: React.FC = () => {
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div
                                 className={`h-2 rounded-full ${
-                                  getSuccessRate(directory) >= 70 ? 'bg-green-500' :
-                                  getSuccessRate(directory) >= 40 ? 'bg-yellow-500' :
-                                  'bg-red-500'
+                                  getSuccessRate(directory) >= 70
+                                    ? "bg-green-500"
+                                    : getSuccessRate(directory) >= 40
+                                      ? "bg-yellow-500"
+                                      : "bg-red-500"
                                 }`}
-                                style={{ width: `${getSuccessRate(directory)}%` }}
+                                style={{
+                                  width: `${getSuccessRate(directory)}%`,
+                                }}
                               />
                             </div>
                           </div>
@@ -168,6 +191,7 @@ const DirectoryManager: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex gap-2">
                           <button
+                            type="button"
                             onClick={() => handleEdit(directory)}
                             className="text-blue-600 hover:text-blue-900"
                             title="Edit"
@@ -175,6 +199,7 @@ const DirectoryManager: React.FC = () => {
                             <Edit className="h-4 w-4" />
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleDelete(directory.id)}
                             disabled={deleteMutation.isPending}
                             className="text-red-600 hover:text-red-900 disabled:opacity-50"
@@ -207,14 +232,14 @@ const DirectoryManager: React.FC = () => {
 
 const getStatusBadgeColor = (status: DirectoryStatus): string => {
   switch (status) {
-    case 'active':
-      return 'bg-green-100 text-green-800';
-    case 'inactive':
-      return 'bg-gray-100 text-gray-800';
-    case 'testing':
-      return 'bg-yellow-100 text-yellow-800';
+    case "active":
+      return "bg-green-100 text-green-800";
+    case "inactive":
+      return "bg-gray-100 text-gray-800";
+    case "testing":
+      return "bg-yellow-100 text-yellow-800";
     default:
-      return 'bg-gray-100 text-gray-800';
+      return "bg-gray-100 text-gray-800";
   }
 };
 
@@ -224,31 +249,38 @@ interface DirectoryFormProps {
   onSuccess: () => void;
 }
 
-const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuccess }) => {
+const DirectoryForm: React.FC<DirectoryFormProps> = ({
+  directory,
+  onClose,
+  onSuccess,
+}) => {
   const isEditing = !!directory;
-  
+
   const createMutation = useCreateDirectory();
   const updateMutation = useUpdateDirectory();
 
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
   } = useForm<DirectoryCreate>({
     resolver: zodResolver(DirectoryCreateSchema),
-    defaultValues: directory ? {
-      name: directory.name,
-      url: directory.url,
-      submission_url: directory.submission_url || undefined,
-      status: directory.status,
-      domain_authority: directory.domain_authority || undefined,
-      category: directory.category || undefined,
-      requires_approval: directory.requires_approval,
-      estimated_approval_time: directory.estimated_approval_time || undefined
-    } : {
-      status: 'active',
-      requires_approval: true
-    }
+    defaultValues: directory
+      ? {
+          name: directory.name,
+          url: directory.url,
+          submission_url: directory.submission_url || undefined,
+          status: directory.status,
+          domain_authority: directory.domain_authority || undefined,
+          category: directory.category || undefined,
+          requires_approval: directory.requires_approval,
+          estimated_approval_time:
+            directory.estimated_approval_time || undefined,
+        }
+      : {
+          status: "active",
+          requires_approval: true,
+        },
   });
 
   const onSubmit: SubmitHandler<DirectoryCreate> = async (data) => {
@@ -261,7 +293,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
       onSuccess();
     } catch (error: any) {
       console.log(error);
-      alert(error.detail || 'Failed to save directory');
+      alert(error.detail || "Failed to save directory");
     }
   };
 
@@ -273,9 +305,13 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
         <div className="p-6">
           <div className="flex justify-between items-start mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              {isEditing ? 'Edit' : 'Add'} Directory
+              {isEditing ? "Edit" : "Add"} Directory
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
               <X className="h-6 w-6" />
             </button>
           </div>
@@ -287,12 +323,14 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
                 Directory Name *
               </label>
               <input
-                {...register('name')}
+                {...register("name")}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Product Hunt"
               />
               {errors.name && (
-                <p className="text-red-600 text-sm mt-1">{errors.name.message}</p>
+                <p className="text-red-600 text-sm mt-1">
+                  {errors.name.message}
+                </p>
               )}
             </div>
 
@@ -302,13 +340,15 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
                 Directory URL *
               </label>
               <input
-                {...register('url')}
+                {...register("url")}
                 type="url"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="https://www.producthunt.com"
               />
               {errors.url && (
-                <p className="text-red-600 text-sm mt-1">{errors.url.message}</p>
+                <p className="text-red-600 text-sm mt-1">
+                  {errors.url.message}
+                </p>
               )}
             </div>
 
@@ -318,7 +358,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
                 Submission URL
               </label>
               <input
-                {...register('submission_url')}
+                {...register("submission_url")}
                 type="url"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="https://www.producthunt.com/posts/new"
@@ -335,7 +375,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
                   Status *
                 </label>
                 <select
-                  {...register('status')}
+                  {...register("status")}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="active">Active</option>
@@ -350,7 +390,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
                   Domain Authority (0-100)
                 </label>
                 <input
-                  {...register('domain_authority', { valueAsNumber: true })}
+                  {...register("domain_authority", { valueAsNumber: true })}
                   type="number"
                   min="0"
                   max="100"
@@ -366,7 +406,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
                 Category
               </label>
               <input
-                {...register('category')}
+                {...register("category")}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Tech Discovery"
               />
@@ -375,12 +415,15 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
             {/* Requires Approval */}
             <div className="flex items-center gap-2">
               <input
-                {...register('requires_approval')}
+                {...register("requires_approval")}
                 type="checkbox"
                 id="requires_approval"
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <label htmlFor="requires_approval" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="requires_approval"
+                className="text-sm font-medium text-gray-700"
+              >
                 Requires Manual Approval
               </label>
             </div>
@@ -391,7 +434,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
                 Estimated Approval Time
               </label>
               <input
-                {...register('estimated_approval_time')}
+                {...register("estimated_approval_time")}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="24 hours"
               />
@@ -412,7 +455,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 <Save className="h-4 w-4" />
-                {isPending ? 'Saving...' : isEditing ? 'Update' : 'Create'}
+                {isPending ? "Saving..." : isEditing ? "Update" : "Create"}
               </button>
             </div>
           </form>

@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { NavLink } from "./NavLink";
-import { Navigate, Route, Routes } from "react-router-dom";
-import Dashboard from '../Dashboard';
-import SubmissionList from '../SubmissionList';
-import BulkSubmit from '../BulkSubmit';
-import SaasManager from '../SaasManager';
-import DirectoryManager from '../DirectoryManager';
 import { Database, Globe, LayoutDashboard, Menu, Send, X } from "lucide-react";
+import { useState } from "react";
+import { Navigate, Route, Routes } from "react-router-dom";
+import BulkSubmit from "../BulkSubmit";
+import Dashboard from "../Dashboard";
+import DirectoryManager from "../DirectoryManager";
+import SaasManager from "../SaasManager";
+import SubmissionList from "../SubmissionList";
+import { NavLink } from "./NavLink";
 
 export default function Layout() {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   return (
     <>
       <aside
@@ -31,6 +31,7 @@ export default function Layout() {
               </div>
             </div>
             <button
+              type="button"
               onClick={() => setSidebarOpen(false)}
               className="md:hidden text-gray-600 hover:text-gray-900"
             >
@@ -57,7 +58,7 @@ export default function Layout() {
 
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -65,6 +66,7 @@ export default function Layout() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="md:hidden bg-white shadow-sm p-4 flex items-center justify-between">
           <button
+            type="button"
             onClick={() => setSidebarOpen(true)}
             className="text-gray-600 hover:text-gray-900"
           >

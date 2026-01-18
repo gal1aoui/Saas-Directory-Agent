@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { useSaasProducts, useDirectories, useBulkSubmit } from '../store';
-import { Send, CheckSquare, Square, AlertCircle, Loader } from 'lucide-react';
-import type { Submission } from '../types/schema';
+import { AlertCircle, CheckSquare, Loader, Send, Square } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import { useBulkSubmit, useDirectories, useSaasProducts } from "../store";
+import type { Submission } from "../types/schema";
 
 interface BulkSubmitResult {
   success: boolean;
@@ -11,19 +12,21 @@ interface BulkSubmitResult {
 
 const BulkSubmit: React.FC = () => {
   const { data: saasProducts = [], isLoading: loadingSaas } = useSaasProducts();
-  const { data: directories = [], isLoading: loadingDirs } = useDirectories({ status: 'active' });
-  
-  const [selectedSaas, setSelectedSaas] = useState<number | ''>('');
+  const { data: directories = [], isLoading: loadingDirs } = useDirectories({
+    status: "active",
+  });
+
+  const [selectedSaas, setSelectedSaas] = useState<number | "">("");
   const [selectedDirectories, setSelectedDirectories] = useState<number[]>([]);
   const [result, setResult] = useState<BulkSubmitResult | null>(null);
 
   const bulkSubmitMutation = useBulkSubmit();
 
   const toggleDirectory = (dirId: number) => {
-    setSelectedDirectories(prev => 
+    setSelectedDirectories((prev) =>
       prev.includes(dirId)
-        ? prev.filter(id => id !== dirId)
-        : [...prev, dirId]
+        ? prev.filter((id) => id !== dirId)
+        : [...prev, dirId],
     );
   };
 
@@ -31,31 +34,35 @@ const BulkSubmit: React.FC = () => {
     if (selectedDirectories.length === directories.length) {
       setSelectedDirectories([]);
     } else {
-      setSelectedDirectories(directories.map(d => d.id));
+      setSelectedDirectories(directories.map((d) => d.id));
     }
   };
 
   const handleSubmit = async () => {
     if (!selectedSaas || selectedDirectories.length === 0) {
-      alert('Please select a SaaS product and at least one directory');
+      alert("Please select a SaaS product and at least one directory");
       return;
     }
 
     try {
       setResult(null);
-      
+
       const submissions = await bulkSubmitMutation.mutateAsync({
         saas_product_id: Number(selectedSaas),
-        directory_ids: selectedDirectories
+        directory_ids: selectedDirectories,
       });
 
-      const successCount = submissions.filter(s => s.status === 'submitted').length;
-      const failedCount = submissions.filter(s => s.status === 'failed').length;
+      const successCount = submissions.filter(
+        (s) => s.status === "submitted",
+      ).length;
+      const failedCount = submissions.filter(
+        (s) => s.status === "failed",
+      ).length;
 
       setResult({
         success: true,
         message: `Submitted to ${submissions.length} directories (${successCount} successful, ${failedCount} failed)`,
-        submissions
+        submissions,
       });
 
       // Reset selections
@@ -63,7 +70,7 @@ const BulkSubmit: React.FC = () => {
     } catch (error: any) {
       setResult({
         success: false,
-        message: `Error: ${error.detail || 'Something went wrong'}`
+        message: `Error: ${error.detail || "Something went wrong"}`,
       });
     }
   };
@@ -94,7 +101,7 @@ const BulkSubmit: React.FC = () => {
           <h2 className="text-xl font-semibold text-gray-900 mb-4">
             1. Select SaaS Product
           </h2>
-          
+
           {saasProducts.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <AlertCircle className="h-12 w-12 mx-auto mb-2 text-gray-400" />
@@ -103,11 +110,13 @@ const BulkSubmit: React.FC = () => {
           ) : (
             <select
               value={selectedSaas}
-              onChange={(e) => setSelectedSaas(e.target.value ? Number(e.target.value) : '')}
+              onChange={(e) =>
+                setSelectedSaas(e.target.value ? Number(e.target.value) : "")
+              }
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">-- Select a SaaS Product --</option>
-              {saasProducts.map(saas => (
+              {saasProducts.map((saas) => (
                 <option key={saas.id} value={saas.id}>
                   {saas.name} - {saas.website_url}
                 </option>
@@ -124,10 +133,13 @@ const BulkSubmit: React.FC = () => {
             </h2>
             {directories.length > 0 && (
               <button
+                type="button"
                 onClick={selectAll}
                 className="text-blue-600 hover:text-blue-800 text-sm font-medium"
               >
-                {selectedDirectories.length === directories.length ? 'Deselect All' : 'Select All'}
+                {selectedDirectories.length === directories.length
+                  ? "Deselect All"
+                  : "Select All"}
               </button>
             )}
           </div>
@@ -139,15 +151,16 @@ const BulkSubmit: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-              {directories.map(directory => (
+              {directories.map((directory) => (
                 <div
                   key={directory.id}
                   onClick={() => toggleDirectory(directory.id)}
                   className={`
                     flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition
-                    ${selectedDirectories.includes(directory.id)
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                    ${
+                      selectedDirectories.includes(directory.id)
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-gray-300"
                     }
                   `}
                 >
@@ -185,14 +198,22 @@ const BulkSubmit: React.FC = () => {
         {/* Submit Button */}
         <div className="bg-white rounded-lg shadow p-6">
           <button
+            type="submit"
             onClick={handleSubmit}
-            disabled={bulkSubmitMutation.isPending || !selectedSaas || selectedDirectories.length === 0}
+            disabled={
+              bulkSubmitMutation.isPending ||
+              !selectedSaas ||
+              selectedDirectories.length === 0
+            }
             className={`
               w-full flex items-center justify-center gap-2 px-6 py-4 rounded-lg
               font-semibold text-white transition
-              ${bulkSubmitMutation.isPending || !selectedSaas || selectedDirectories.length === 0
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700'
+              ${
+                bulkSubmitMutation.isPending ||
+                !selectedSaas ||
+                selectedDirectories.length === 0
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
               }
             `}
           >
@@ -204,24 +225,37 @@ const BulkSubmit: React.FC = () => {
             ) : (
               <>
                 <Send className="h-5 w-5" />
-                Submit to {selectedDirectories.length} Director{selectedDirectories.length !== 1 ? 'ies' : 'y'}
+                Submit to {selectedDirectories.length} Director
+                {selectedDirectories.length !== 1 ? "ies" : "y"}
               </>
             )}
           </button>
 
           {result && (
-            <div className={`
+            <div
+              className={`
               mt-4 p-4 rounded-lg
-              ${result.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}
-            `}>
+              ${result.success ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}
+            `}
+            >
               <p className="font-medium">{result.message}</p>
               {result.success && result.submissions && (
                 <div className="mt-2 text-sm">
                   <p>
-                    ✓ {result.submissions.filter(s => s.status === 'submitted').length} successful
+                    ✓{" "}
+                    {
+                      result.submissions.filter((s) => s.status === "submitted")
+                        .length
+                    }{" "}
+                    successful
                   </p>
                   <p>
-                    ✗ {result.submissions.filter(s => s.status === 'failed').length} failed
+                    ✗{" "}
+                    {
+                      result.submissions.filter((s) => s.status === "failed")
+                        .length
+                    }{" "}
+                    failed
                   </p>
                 </div>
               )}
@@ -236,9 +270,10 @@ const BulkSubmit: React.FC = () => {
             <div className="text-sm text-blue-800">
               <p className="font-medium mb-1">About Bulk Submissions</p>
               <p>
-                Submissions are processed concurrently with automatic retry logic. 
-                Each directory will be analyzed by AI to detect form fields, then filled and submitted automatically.
-                This process may take several minutes depending on the number of directories.
+                Submissions are processed concurrently with automatic retry
+                logic. Each directory will be analyzed by AI to detect form
+                fields, then filled and submitted automatically. This process
+                may take several minutes depending on the number of directories.
               </p>
             </div>
           </div>

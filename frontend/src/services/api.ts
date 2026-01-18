@@ -1,27 +1,28 @@
-import axios, { type AxiosInstance } from 'axios';
+import axios, { type AxiosInstance } from "axios";
+import { z } from "zod";
 import {
-  type SaasProduct,
-  type SaasProductCreate,
-  type SaasProductUpdate,
-  type Directory,
-  type DirectoryCreate,
-  type DirectoryUpdate,
-  type Submission,
-  type SubmissionWithDetails,
-  type SubmissionCreate,
   type BulkSubmissionRequest,
   type DashboardStats,
+  DashboardStatsSchema,
+  type Directory,
+  type DirectoryCreate,
   type DirectoryFilters,
-  type SubmissionFilters,
-  SaasProductSchema,
   DirectorySchema,
+  type DirectoryUpdate,
+  type SaasProduct,
+  type SaasProductCreate,
+  SaasProductSchema,
+  type SaasProductUpdate,
+  type Submission,
+  type SubmissionCreate,
+  type SubmissionFilters,
   SubmissionSchema,
+  type SubmissionWithDetails,
   SubmissionWithDetailsSchema,
-  DashboardStatsSchema
-} from '../types/schema';
-import { z } from 'zod';
+} from "../types/schema";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 class ApiService {
   private client: AxiosInstance;
@@ -30,7 +31,7 @@ class ApiService {
     this.client = axios.create({
       baseURL: API_BASE_URL,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       timeout: 30000,
     });
@@ -40,19 +41,19 @@ class ApiService {
       (response) => response,
       (error) => {
         if (error.response) {
-          console.error('API Error:', error.response.data);
+          console.error("API Error:", error.response.data);
           throw {
-            detail: error.response.data.detail || 'An error occurred',
-            status: error.response.status
+            detail: error.response.data.detail || "An error occurred",
+            status: error.response.status,
           };
         } else if (error.request) {
-          console.error('Network Error:', error.request);
-          throw { detail: 'Network error. Please check your connection.' };
+          console.error("Network Error:", error.request);
+          throw { detail: "Network error. Please check your connection." };
         } else {
-          console.error('Error:', error.message);
+          console.error("Error:", error.message);
           throw { detail: error.message };
         }
-      }
+      },
     );
   }
 
@@ -63,7 +64,7 @@ class ApiService {
 
   // SaaS Products API
   async getSaasProducts(): Promise<SaasProduct[]> {
-    const response = await this.client.get<SaasProduct[]>('/saas');
+    const response = await this.client.get<SaasProduct[]>("/saas");
     return response.data;
   }
 
@@ -73,11 +74,14 @@ class ApiService {
   }
 
   async createSaasProduct(data: SaasProductCreate): Promise<SaasProduct> {
-    const response = await this.client.post<SaasProduct>('/saas', data);
+    const response = await this.client.post<SaasProduct>("/saas", data);
     return this.validate(SaasProductSchema, response.data);
   }
 
-  async updateSaasProduct(id: number, data: SaasProductUpdate): Promise<SaasProduct> {
+  async updateSaasProduct(
+    id: number,
+    data: SaasProductUpdate,
+  ): Promise<SaasProduct> {
     const response = await this.client.put<SaasProduct>(`/saas/${id}`, data);
     return this.validate(SaasProductSchema, response.data);
   }
@@ -88,7 +92,9 @@ class ApiService {
 
   // Directories API
   async getDirectories(filters?: DirectoryFilters): Promise<Directory[]> {
-    const response = await this.client.get<Directory[]>('/directories', { params: filters });
+    const response = await this.client.get<Directory[]>("/directories", {
+      params: filters,
+    });
     return response.data;
   }
 
@@ -98,12 +104,15 @@ class ApiService {
   }
 
   async createDirectory(data: DirectoryCreate): Promise<Directory> {
-    const response = await this.client.post<Directory>('/directories', data);
+    const response = await this.client.post<Directory>("/directories", data);
     return this.validate(DirectorySchema, response.data);
   }
 
   async updateDirectory(id: number, data: DirectoryUpdate): Promise<Directory> {
-    const response = await this.client.put<Directory>(`/directories/${id}`, data);
+    const response = await this.client.put<Directory>(
+      `/directories/${id}`,
+      data,
+    );
     return this.validate(DirectorySchema, response.data);
   }
 
@@ -112,35 +121,48 @@ class ApiService {
   }
 
   // Submissions API
-  async getSubmissions(filters?: SubmissionFilters): Promise<SubmissionWithDetails[]> {
-    const response = await this.client.get<SubmissionWithDetails[]>('/submissions', { 
-      params: filters 
-    });
+  async getSubmissions(
+    filters?: SubmissionFilters,
+  ): Promise<SubmissionWithDetails[]> {
+    const response = await this.client.get<SubmissionWithDetails[]>(
+      "/submissions",
+      {
+        params: filters,
+      },
+    );
     return z.array(SubmissionWithDetailsSchema).parse(response.data);
   }
 
   async getSubmission(id: number): Promise<SubmissionWithDetails> {
-    const response = await this.client.get<SubmissionWithDetails>(`/submissions/${id}`);
+    const response = await this.client.get<SubmissionWithDetails>(
+      `/submissions/${id}`,
+    );
     return this.validate(SubmissionWithDetailsSchema, response.data);
   }
 
   async createSubmission(data: SubmissionCreate): Promise<Submission> {
-    const response = await this.client.post<Submission>('/submissions', data);
+    const response = await this.client.post<Submission>("/submissions", data);
     return this.validate(SubmissionSchema, response.data);
   }
 
   async bulkSubmit(data: BulkSubmissionRequest): Promise<Submission[]> {
-    const response = await this.client.post<Submission[]>('/submissions/bulk', data);
+    const response = await this.client.post<Submission[]>(
+      "/submissions/bulk",
+      data,
+    );
     return z.array(SubmissionSchema).parse(response.data);
   }
 
   async retrySubmission(id: number): Promise<Submission> {
-    const response = await this.client.post<Submission>(`/submissions/${id}/retry`);
+    const response = await this.client.post<Submission>(
+      `/submissions/${id}/retry`,
+    );
     return this.validate(SubmissionSchema, response.data);
   }
 
   async getDashboardStats(): Promise<DashboardStats> {
-    const response = await this.client.get<DashboardStats>('/submissions/stats');
+    const response =
+      await this.client.get<DashboardStats>("/submissions/stats");
     return this.validate(DashboardStatsSchema, response.data);
   }
 }

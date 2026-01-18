@@ -16,9 +16,10 @@ export const NavLink: React.FC<NavLinkProps> = ({ to, icon: Icon, label }) => {
       to={to}
       className={`
         flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group
-        ${isActive 
-          ? 'bg-blue-50 text-blue-600' 
-          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+        ${
+          isActive
+            ? "bg-blue-50 text-blue-600"
+            : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
         }
       `}
     >
