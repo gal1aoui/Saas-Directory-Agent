@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 class Settings(BaseSettings):
@@ -18,26 +18,29 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: list = ["http://localhost:3000", "http://localhost:5173"]
     
     # Browser Automation
-    HEADLESS_BROWSER: bool = False  # Set to True in production
-    BROWSER_TIMEOUT: int = 30000  # 30 seconds
+    HEADLESS_BROWSER: bool = False
+    BROWSER_TIMEOUT: int = 30000
     
     # AI Settings
-    AI_MODEL: str = "gpt-4-vision-preview"  # or "claude-3-opus-20240229"
+    AI_MODEL: str = "gpt-4-vision-preview"
     AI_TEMPERATURE: float = 0.1
     MAX_TOKENS: int = 4096
     
     # Workflow
     MAX_RETRIES: int = 3
-    RETRY_DELAY: int = 300  # 5 minutes in seconds
+    RETRY_DELAY: int = 300
     CONCURRENT_SUBMISSIONS: int = 3
     
     # File Upload
     UPLOAD_DIR: str = "./uploads"
-    MAX_UPLOAD_SIZE: int = 5 * 1024 * 1024  # 5MB
+    MAX_UPLOAD_SIZE: int = 5 * 1024 * 1024
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    # --- UPDATED FOR 2026 / PYDANTIC V2 ---
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore"  # This prevents the "Extra inputs are not permitted" error
+    )
 
 @lru_cache()
 def get_settings():

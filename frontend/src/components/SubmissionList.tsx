@@ -1,12 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { useSubmissions, useDebounce, useAsync } from '../hooks';
-import { api } from '../services/api';
+import { useSubmissions, useRetrySubmission } from '../store';
 import { 
   RefreshCw, Filter, Search, ExternalLink, 
   CheckCircle, XCircle, Clock, Send, X 
 } from 'lucide-react';
 import type { SubmissionStatus, SubmissionWithDetails } from '../types/schema';
 import { format } from 'date-fns';
+import { useDebounce } from '../utils/use-debounce';
 
 const SubmissionList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<SubmissionStatus | ''>('');
@@ -15,18 +15,15 @@ const SubmissionList: React.FC = () => {
   
   const debouncedSearch = useDebounce(searchQuery, 300);
   
-  const { data: submissions, loading, refetch } = useSubmissions({
+  const { data: submissions = [], isLoading, refetch } = useSubmissions({
     status: statusFilter || undefined
   });
 
-  const { execute: retrySubmission, loading: retrying } = useAsync(
-    (id: number) => api.retrySubmission(id)
-  );
+  const retryMutation = useRetrySubmission();
 
   const handleRetry = async (submissionId: number) => {
     try {
-      await retrySubmission(submissionId);
-      refetch();
+      await retryMutation.mutateAsync(submissionId);
     } catch (error) {
       console.error('Error retrying submission:', error);
     }
@@ -86,10 +83,10 @@ const SubmissionList: React.FC = () => {
             {/* Refresh */}
             <button
               onClick={() => refetch()}
-              disabled={loading}
+              disabled={isLoading}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
             >
-              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
           </div>
@@ -119,7 +116,7 @@ const SubmissionList: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {loading ? (
+                {isLoading ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
                       <div className="flex justify-center">
@@ -179,11 +176,11 @@ const SubmissionList: React.FC = () => {
                           {submission.status === 'failed' && (
                             <button
                               onClick={() => handleRetry(submission.id)}
-                              disabled={retrying}
+                              disabled={retryMutation.isPending}
                               className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
                               title="Retry submission"
                             >
-                              <RefreshCw className={`h-4 w-4 ${retrying ? 'animate-spin' : ''}`} />
+                              <RefreshCw className={`h-4 w-4 ${retryMutation.isPending ? 'animate-spin' : ''}`} />
                             </button>
                           )}
                           <button

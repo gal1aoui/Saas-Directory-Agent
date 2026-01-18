@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { useSaasProducts, useAsync } from '../hooks';
-import { api } from '../services/api';
-import { useForm } from 'react-hook-form';
+import { useSaasProducts, useDeleteSaasProduct, useCreateSaasProduct, useUpdateSaasProduct } from '../store';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Edit, Trash2, X, Save } from 'lucide-react';
 import { type SaasProduct, type SaasProductCreate, SaasProductCreateSchema } from '../types/schema';
 
 const SaasManager: React.FC = () => {
-  const { data: products, loading, refetch } = useSaasProducts();
+  const { data: products = [], isLoading } = useSaasProducts();
+  const deleteMutation = useDeleteSaasProduct();
+  
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<SaasProduct | null>(null);
 
@@ -20,8 +21,7 @@ const SaasManager: React.FC = () => {
     if (!confirm('Are you sure you want to delete this SaaS product?')) return;
     
     try {
-      await api.deleteSaasProduct(id);
-      refetch();
+      await deleteMutation.mutateAsync(id);
     } catch (error) {
       console.error('Error deleting product:', error);
     }
@@ -34,7 +34,6 @@ const SaasManager: React.FC = () => {
 
   const handleSuccess = () => {
     handleCloseForm();
-    refetch();
   };
 
   return (
@@ -56,7 +55,7 @@ const SaasManager: React.FC = () => {
         </div>
 
         {/* Products Grid */}
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
           </div>
@@ -118,7 +117,8 @@ const SaasManager: React.FC = () => {
                   </button>
                   <button
                     onClick={() => handleDelete(product.id)}
-                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                    disabled={deleteMutation.isPending}
+                    className="flex-1 flex items-center justify-center gap-1 px-3 py-2 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
                     Delete
@@ -150,6 +150,9 @@ interface SaasProductFormProps {
 
 const SaasProductForm: React.FC<SaasProductFormProps> = ({ product, onClose, onSuccess }) => {
   const isEditing = !!product;
+  
+  const createMutation = useCreateSaasProduct();
+  const updateMutation = useUpdateSaasProduct();
 
   const {
     register,
@@ -172,24 +175,20 @@ const SaasProductForm: React.FC<SaasProductFormProps> = ({ product, onClose, onS
     } : undefined
   });
 
-  const { execute: saveProduct, loading } = useAsync(
-    async (data: SaasProductCreate) => {
-      if (isEditing) {
-        return api.updateSaasProduct(product.id, data);
-      } else {
-        return api.createSaasProduct(data);
-      }
-    }
-  );
-
-  const onSubmit = async (data: SaasProductCreate) => {
+  const onSubmit: SubmitHandler<SaasProductCreate> = async (data) => {
     try {
-      await saveProduct(data);
+      if (isEditing) {
+        await updateMutation.mutateAsync({ id: product.id, data });
+      } else {
+        await createMutation.mutateAsync(data);
+      }
       onSuccess();
     } catch (error: any) {
       alert(error.detail || 'Failed to save product');
     }
   };
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -342,11 +341,11 @@ const SaasProductForm: React.FC<SaasProductFormProps> = ({ product, onClose, onS
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={isPending}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 <Save className="h-4 w-4" />
-                {loading ? 'Saving...' : isEditing ? 'Update' : 'Create'}
+                {isPending ? 'Saving...' : isEditing ? 'Update' : 'Create'}
               </button>
             </div>
           </form>

@@ -1,11 +1,11 @@
 import React from 'react';
-import { useDashboardStats, useSubmissions } from '../hooks';
+import { useDashboardStats, useSubmissions } from '../store';
 import { 
   CheckCircle, XCircle, Clock, Send, TrendingUp, 
   Database, Globe, AlertCircle, type LucideIcon 
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { type SubmissionStatus } from '../types/schema';
+import type { SubmissionStatus } from '../types/schema';
 import { format } from 'date-fns';
 
 interface StatCard {
@@ -21,11 +21,12 @@ interface ChartData {
   name: string;
   value: number;
   color: string;
+  [key: string]: string | number; // Index signature for Recharts
 }
 
 const Dashboard: React.FC = () => {
-  const { data: stats, loading: statsLoading, refetch: refetchStats } = useDashboardStats();
-  const { data: recentSubmissions, loading: submissionsLoading } = useSubmissions({ limit: 10 });
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats, error: statsError } = useDashboardStats();
+  const { data: recentSubmissions = [], isLoading: submissionsLoading } = useSubmissions({ limit: 10 });
 
   const loading = statsLoading || submissionsLoading;
 
@@ -37,7 +38,7 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  if (!stats) {
+  if (statsError || !stats) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -94,18 +95,16 @@ const Dashboard: React.FC = () => {
     { name: 'Submitted', value: stats.submitted_submissions, color: '#3b82f6' },
     { name: 'Pending', value: stats.pending_submissions, color: '#f59e0b' },
     { name: 'Failed', value: stats.failed_submissions, color: '#ef4444' }
-  ].filter(item => item.value > 0); // Only show non-zero values
+  ].filter(item => item.value > 0);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-2">Overview of your SaaS directory submissions</p>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {statCards.map((stat, index) => (
             <div key={index} className="bg-white rounded-lg shadow p-6">
@@ -123,7 +122,6 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Success Rate Card */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Success Rate</h2>
@@ -139,7 +137,6 @@ const Dashboard: React.FC = () => {
             </p>
           </div>
 
-          {/* Directories Card */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Directories</h2>
@@ -162,9 +159,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Chart and Recent Submissions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Submissions Chart */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
               Submissions Breakdown
@@ -199,7 +194,6 @@ const Dashboard: React.FC = () => {
             )}
           </div>
 
-          {/* Recent Submissions */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
               Recent Submissions

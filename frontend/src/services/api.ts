@@ -145,8 +145,6 @@ class ApiService {
   }
 }
 
-// Export singleton instance
 export const api = new ApiService();
 
-// Export for testing or multiple instances
 export default ApiService;

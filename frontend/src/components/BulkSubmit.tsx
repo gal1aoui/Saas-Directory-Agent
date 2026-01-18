@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { useSaasProducts, useDirectories, useAsync } from '../hooks';
-import { api } from '../services/api';
+import { useSaasProducts, useDirectories, useBulkSubmit } from '../store';
 import { Send, CheckSquare, Square, AlertCircle, Loader } from 'lucide-react';
 import type { Submission } from '../types/schema';
 
@@ -11,17 +10,14 @@ interface BulkSubmitResult {
 }
 
 const BulkSubmit: React.FC = () => {
-  const { data: saasProducts, loading: loadingSaas } = useSaasProducts();
-  const { data: directories, loading: loadingDirs } = useDirectories({ status: 'active' });
+  const { data: saasProducts = [], isLoading: loadingSaas } = useSaasProducts();
+  const { data: directories = [], isLoading: loadingDirs } = useDirectories({ status: 'active' });
   
   const [selectedSaas, setSelectedSaas] = useState<number | ''>('');
   const [selectedDirectories, setSelectedDirectories] = useState<number[]>([]);
   const [result, setResult] = useState<BulkSubmitResult | null>(null);
 
-  const { execute: submitBulk, loading: submitting } = useAsync(
-    (saasId: number, dirIds: number[]) => 
-      api.bulkSubmit({ saas_product_id: saasId, directory_ids: dirIds })
-  );
+  const bulkSubmitMutation = useBulkSubmit();
 
   const toggleDirectory = (dirId: number) => {
     setSelectedDirectories(prev => 
@@ -48,7 +44,10 @@ const BulkSubmit: React.FC = () => {
     try {
       setResult(null);
       
-      const submissions = await submitBulk(Number(selectedSaas), selectedDirectories);
+      const submissions = await bulkSubmitMutation.mutateAsync({
+        saas_product_id: Number(selectedSaas),
+        directory_ids: selectedDirectories
+      });
 
       const successCount = submissions.filter(s => s.status === 'submitted').length;
       const failedCount = submissions.filter(s => s.status === 'failed').length;
@@ -187,17 +186,17 @@ const BulkSubmit: React.FC = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <button
             onClick={handleSubmit}
-            disabled={submitting || !selectedSaas || selectedDirectories.length === 0}
+            disabled={bulkSubmitMutation.isPending || !selectedSaas || selectedDirectories.length === 0}
             className={`
               w-full flex items-center justify-center gap-2 px-6 py-4 rounded-lg
               font-semibold text-white transition
-              ${submitting || !selectedSaas || selectedDirectories.length === 0
+              ${bulkSubmitMutation.isPending || !selectedSaas || selectedDirectories.length === 0
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-blue-600 hover:bg-blue-700'
               }
             `}
           >
-            {submitting ? (
+            {bulkSubmitMutation.isPending ? (
               <>
                 <Loader className="h-5 w-5 animate-spin" />
                 Submitting...

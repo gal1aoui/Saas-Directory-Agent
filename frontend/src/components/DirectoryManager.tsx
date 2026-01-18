@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { useDirectories, useAsync } from '../hooks';
-import { api } from '../services/api';
-import { useForm } from 'react-hook-form';
+import { useDirectories, useDeleteDirectory, useCreateDirectory, useUpdateDirectory } from '../store';
+import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Edit, Trash2, X, Save, Globe } from 'lucide-react';
-import { type Directory, type DirectoryCreate, DirectoryCreateSchema, type DirectoryStatus } from '../types/schema';
+import { type Directory, type DirectoryCreate, type DirectoryStatus, DirectoryCreateSchema } from '../types/schema';
 
 const DirectoryManager: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<DirectoryStatus | ''>('');
-  const { data: directories, loading, refetch } = useDirectories({
+  const { data: directories = [], isLoading } = useDirectories({
     status: statusFilter || undefined
   });
+  const deleteMutation = useDeleteDirectory();
+  
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDirectory, setEditingDirectory] = useState<Directory | null>(null);
 
@@ -23,8 +24,7 @@ const DirectoryManager: React.FC = () => {
     if (!confirm('Are you sure you want to delete this directory?')) return;
     
     try {
-      await api.deleteDirectory(id);
-      refetch();
+      await deleteMutation.mutateAsync(id);
     } catch (error) {
       console.error('Error deleting directory:', error);
     }
@@ -37,7 +37,6 @@ const DirectoryManager: React.FC = () => {
 
   const handleSuccess = () => {
     handleCloseForm();
-    refetch();
   };
 
   const getSuccessRate = (dir: Directory): number => {
@@ -76,7 +75,7 @@ const DirectoryManager: React.FC = () => {
         </div>
 
         {/* Directories Table */}
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
           </div>
@@ -161,7 +160,7 @@ const DirectoryManager: React.FC = () => {
                               />
                             </div>
                           </div>
-                          <span className="text-sm text-gray-700 min-w-12">
+                          <span className="text-sm text-gray-700 min-w-[3rem]">
                             {getSuccessRate(directory).toFixed(0)}%
                           </span>
                         </div>
@@ -177,7 +176,8 @@ const DirectoryManager: React.FC = () => {
                           </button>
                           <button
                             onClick={() => handleDelete(directory.id)}
-                            className="text-red-600 hover:text-red-900"
+                            disabled={deleteMutation.isPending}
+                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
                             title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -226,6 +226,9 @@ interface DirectoryFormProps {
 
 const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuccess }) => {
   const isEditing = !!directory;
+  
+  const createMutation = useCreateDirectory();
+  const updateMutation = useUpdateDirectory();
 
   const {
     register,
@@ -248,24 +251,20 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
     }
   });
 
-  const { execute: saveDirectory, loading } = useAsync(
-    async (data: DirectoryCreate) => {
-      if (isEditing) {
-        return api.updateDirectory(directory.id, data);
-      } else {
-        return api.createDirectory(data);
-      }
-    }
-  );
-
-  const onSubmit = async (data: DirectoryCreate) => {
+  const onSubmit: SubmitHandler<DirectoryCreate> = async (data) => {
     try {
-      await saveDirectory(data);
+      if (isEditing) {
+        await updateMutation.mutateAsync({ id: directory.id, data });
+      } else {
+        await createMutation.mutateAsync(data);
+      }
       onSuccess();
     } catch (error: any) {
       alert(error.detail || 'Failed to save directory');
     }
   };
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -408,11 +407,11 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={isPending}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
               >
                 <Save className="h-4 w-4" />
-                {loading ? 'Saving...' : isEditing ? 'Update' : 'Create'}
+                {isPending ? 'Saving...' : isEditing ? 'Update' : 'Create'}
               </button>
             </div>
           </form>
