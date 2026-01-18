@@ -1,4 +1,4 @@
-from typing import List
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.post("/", response_model=DirectorySchema, status_code=status.HTTP_201_CREATED)
-async def create_directory(directory: DirectoryCreate, db: Session = Depends(get_db)):
+async def create_directory(directory: DirectoryCreate, db: Annotated[Session, Depends(get_db)]):
     """Add a new directory"""
     db_directory = Directory(**directory.model_dump(mode="json"))
     db.add(db_directory)
@@ -23,10 +23,10 @@ async def create_directory(directory: DirectoryCreate, db: Session = Depends(get
 
 @router.get("/", response_model=List[DirectorySchema])
 async def list_directories(
+    db: Annotated[Session, Depends(get_db)],
     status: DirectoryStatus = None,
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db),
 ):
     """List all directories"""
     query = db.query(Directory)
@@ -36,9 +36,11 @@ async def list_directories(
     directories = query.offset(skip).limit(limit).all()
     return directories
 
-
 @router.get("/{directory_id}", response_model=DirectorySchema)
-async def get_directory(directory_id: int, db: Session = Depends(get_db)):
+async def get_directory(
+    directory_id: int,
+    db: Annotated[Session, Depends(get_db)],
+):
     """Get a specific directory"""
     directory = db.query(Directory).filter(Directory.id == directory_id).first()
     if not directory:
@@ -48,7 +50,7 @@ async def get_directory(directory_id: int, db: Session = Depends(get_db)):
 
 @router.put("/{directory_id}", response_model=DirectorySchema)
 async def update_directory(
-    directory_id: int, directory_update: DirectoryUpdate, db: Session = Depends(get_db)
+    directory_id: int, directory_update: DirectoryUpdate, db: Annotated[Session, Depends(get_db)],
 ):
     """Update a directory"""
     directory = db.query(Directory).filter(Directory.id == directory_id).first()
@@ -65,7 +67,7 @@ async def update_directory(
 
 
 @router.delete("/{directory_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_directory(directory_id: int, db: Session = Depends(get_db)):
+async def delete_directory(directory_id: int, db: Annotated[Session, Depends(get_db)],):
     """Delete a directory"""
     directory = db.query(Directory).filter(Directory.id == directory_id).first()
     if not directory:

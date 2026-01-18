@@ -65,9 +65,7 @@ class BrowserAutomation:
 
         try:
             # Navigate with timeout
-            await page.goto(
-                url, wait_until="networkidle", timeout=self.settings.BROWSER_TIMEOUT
-            )
+            await page.goto(url, wait_until="networkidle", timeout=self.settings.BROWSER_TIMEOUT)
 
             # Wait for page to be fully loaded
             await page.wait_for_load_state("domcontentloaded")
@@ -75,9 +73,7 @@ class BrowserAutomation:
 
             # Take screenshot
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            screenshot_path = (
-                f"{self.settings.UPLOAD_DIR}/screenshots/form_{timestamp}.png"
-            )
+            screenshot_path = f"{self.settings.UPLOAD_DIR}/screenshots/form_{timestamp}.png"
             os.makedirs(os.path.dirname(screenshot_path), exist_ok=True)
             await page.screenshot(path=screenshot_path, full_page=True)
 
@@ -116,9 +112,7 @@ class BrowserAutomation:
 
         try:
             # Navigate to submission page
-            await page.goto(
-                url, wait_until="networkidle", timeout=self.settings.BROWSER_TIMEOUT
-            )
+            await page.goto(url, wait_until="networkidle", timeout=self.settings.BROWSER_TIMEOUT)
             logger.info(f"Navigated to {url}")
 
             # Fill each field
@@ -185,14 +179,10 @@ class BrowserAutomation:
                     "try again",
                 ]
 
-                has_error = any(
-                    indicator in page_text for indicator in error_indicators
-                )
+                has_error = any(indicator in page_text for indicator in error_indicators)
 
                 if has_error:
-                    result["message"] = (
-                        "Submission failed - form validation errors detected"
-                    )
+                    result["message"] = "Submission failed - form validation errors detected"
                     logger.warning(f"Form validation errors at {url}")
                 else:
                     # Might be successful but unclear
@@ -225,9 +215,7 @@ class BrowserAutomation:
 
             # Check element type
             tag_name = await element.evaluate("el => el.tagName.toLowerCase()")
-            input_type = (
-                await element.get_attribute("type") if tag_name == "input" else None
-            )
+            input_type = await element.get_attribute("type") if tag_name == "input" else None
 
             if tag_name == "input" and input_type == "file":
                 # File upload
@@ -336,9 +324,7 @@ class BrowserAutomation:
 
         return False
 
-    async def handle_multi_step_form(
-        self, url: str, form_steps: List[Dict[str, Dict]]
-    ) -> Dict:
+    async def handle_multi_step_form(self, url: str, form_steps: List[Dict[str, Dict]]) -> Dict:
         """
         Handle multi-step forms.
         form_steps: List of dicts, each containing field_mapping for that step

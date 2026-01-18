@@ -242,18 +242,13 @@ class AIFormReader:
         field_text = (field_name + " " + field_label).lower()
 
         # Mapping rules
-        if any(
-            term in field_text
-            for term in ["company", "product name", "app name", "startup"]
-        ):
+        if any(term in field_text for term in ["company", "product name", "app name", "startup"]):
             return "company_name"
         elif any(term in field_text for term in ["website", "url", "link", "site"]):
             return "website_url"
         elif any(term in field_text for term in ["email", "contact email"]):
             return "contact_email"
-        elif any(
-            term in field_text for term in ["short description", "tagline", "pitch"]
-        ):
+        elif any(term in field_text for term in ["short description", "tagline", "pitch"]):
             return "short_description"
         elif any(term in field_text for term in ["description", "about", "details"]):
             return "description"
@@ -271,9 +266,7 @@ class AIFormReader:
             # Return sanitized version of original
             return field_name.lower().replace(" ", "_")
 
-    def map_saas_data_to_fields(
-        self, saas_data: Dict, detected_fields: List[Dict]
-    ) -> Dict[str, any]:
+    def map_saas_data_to_fields(self, saas_data: Dict, detected_fields: List[Dict]) -> Dict[str, any]:
         """
         Map SaaS product data to detected form fields.
         Returns a dictionary ready for form filling.

@@ -30,21 +30,15 @@ class WorkflowManager:
         self.is_running = False
         self.scheduler_thread = None
 
-    async def submit_to_directory(
-        self, saas_product_id: int, directory_id: int
-    ) -> Submission:
+    async def submit_to_directory(self, saas_product_id: int, directory_id: int) -> Submission:
         """
         Execute single submission to a directory.
         This is the main workflow orchestration method.
         """
         # Get SaaS product and directory
-        saas_product = (
-            self.db.query(SaasProduct).filter(SaasProduct.id == saas_product_id).first()
-        )
+        saas_product = self.db.query(SaasProduct).filter(SaasProduct.id == saas_product_id).first()
 
-        directory = (
-            self.db.query(Directory).filter(Directory.id == directory_id).first()
-        )
+        directory = self.db.query(Directory).filter(Directory.id == directory_id).first()
 
         if not saas_product or not directory:
             raise ValueError("SaaS product or directory not found")
@@ -115,9 +109,7 @@ class WorkflowManager:
                 # Update directory statistics
                 directory.total_submissions += 1
 
-                logger.error(
-                    f"❌ Submission {submission.id} failed: {submission_result['message']}"
-                )
+                logger.error(f"❌ Submission {submission.id} failed: {submission_result['message']}")
 
             # Store submission data
             submission.submission_data = {
@@ -143,18 +135,14 @@ class WorkflowManager:
             # Add to error log
             if not submission.error_log:
                 submission.error_log = []
-            submission.error_log.append(
-                {"timestamp": datetime.now().isoformat(), "error": str(e)}
-            )
+            submission.error_log.append({"timestamp": datetime.now().isoformat(), "error": str(e)})
 
             self.db.commit()
             self.db.refresh(submission)
 
             return submission
 
-    async def bulk_submit(
-        self, saas_product_id: int, directory_ids: List[int]
-    ) -> List[Submission]:
+    async def bulk_submit(self, saas_product_id: int, directory_ids: List[int]) -> List[Submission]:
         """
         Submit to multiple directories concurrently.
         Respects CONCURRENT_SUBMISSIONS setting.
@@ -177,11 +165,9 @@ class WorkflowManager:
         # Filter out exceptions
         successful_submissions = [s for s in submissions if isinstance(s, Submission)]
 
-        completed_submissions = len(successful_submissions)/len(directory_ids)
+        completed_submissions = len(successful_submissions) / len(directory_ids)
 
-        logger.info(
-            f"Bulk submission completed: {completed_submissions} successful"
-        )
+        logger.info(f"Bulk submission completed: {completed_submissions} successful")
 
         return successful_submissions
 
@@ -211,10 +197,8 @@ class WorkflowManager:
 
         for submission in failed_submissions:
             try:
-                submission_attempts = (submission.retry_count + 1)/submission.max_retries
-                logger.info(
-                    f"Retrying submission {submission.id} (attempt {submission_attempts})"
-                )
+                submission_attempts = (submission.retry_count + 1) / submission.max_retries
+                logger.info(f"Retrying submission {submission.id} (attempt {submission_attempts})")
 
                 # Update retry metadata
                 submission.retry_count += 1
@@ -223,9 +207,7 @@ class WorkflowManager:
                 self.db.commit()
 
                 # Retry submission
-                await self.submit_to_directory(
-                    submission.saas_product_id, submission.directory_id
-                )
+                await self.submit_to_directory(submission.saas_product_id, submission.directory_id)
 
             except Exception as e:
                 logger.error(f"Error retrying submission {submission.id}: {str(e)}")
@@ -309,9 +291,7 @@ class WorkflowManager:
     def get_queue_status(self) -> Dict:
         """Get current status of submission queue"""
         pending = (
-            self.db.query(Submission)
-            .filter(Submission.status == SubmissionStatus.PENDING)
-            .count()
+            self.db.query(Submission).filter(Submission.status == SubmissionStatus.PENDING).count()
         )
 
         failed = (
