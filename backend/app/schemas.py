@@ -1,7 +1,9 @@
-from pydantic import BaseModel, HttpUrl, EmailStr, Field
-from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, EmailStr, Field, HttpUrl
+
 
 # Enums
 class SubmissionStatus(str, Enum):
@@ -11,10 +13,12 @@ class SubmissionStatus(str, Enum):
     REJECTED = "rejected"
     FAILED = "failed"
 
+
 class DirectoryStatus(str, Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
     TESTING = "testing"
+
 
 # SaaS Product Schemas
 class SaasProductBase(BaseModel):
@@ -30,8 +34,10 @@ class SaasProductBase(BaseModel):
     features: Optional[List[str]] = None
     social_links: Optional[Dict[str, str]] = None
 
+
 class SaasProductCreate(SaasProductBase):
     pass
+
 
 class SaasProductUpdate(BaseModel):
     name: Optional[str] = None
@@ -46,13 +52,15 @@ class SaasProductUpdate(BaseModel):
     features: Optional[List[str]] = None
     social_links: Optional[Dict[str, str]] = None
 
+
 class SaasProduct(SaasProductBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
+
 
 # Directory Schemas
 class DirectoryBase(BaseModel):
@@ -65,8 +73,10 @@ class DirectoryBase(BaseModel):
     requires_approval: bool = True
     estimated_approval_time: Optional[str] = None
 
+
 class DirectoryCreate(DirectoryBase):
     pass
+
 
 class DirectoryUpdate(BaseModel):
     name: Optional[str] = None
@@ -78,6 +88,7 @@ class DirectoryUpdate(BaseModel):
     requires_approval: Optional[bool] = None
     estimated_approval_time: Optional[str] = None
 
+
 class Directory(DirectoryBase):
     id: int
     total_submissions: int
@@ -86,22 +97,26 @@ class Directory(DirectoryBase):
     last_form_detection: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
+
 
 # Submission Schemas
 class SubmissionBase(BaseModel):
     saas_product_id: int
     directory_id: int
 
+
 class SubmissionCreate(SubmissionBase):
     pass
+
 
 class SubmissionUpdate(BaseModel):
     status: Optional[SubmissionStatus] = None
     response_message: Optional[str] = None
     listing_url: Optional[HttpUrl] = None
+
 
 class Submission(SubmissionBase):
     id: int
@@ -120,19 +135,22 @@ class Submission(SubmissionBase):
     form_screenshot_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
+
 
 # Submission with relationships
 class SubmissionWithDetails(Submission):
     saas_product: SaasProduct
     directory: Directory
 
+
 # Bulk submission request
 class BulkSubmissionRequest(BaseModel):
     saas_product_id: int
     directory_ids: List[int]
+
 
 # Dashboard statistics
 class DashboardStats(BaseModel):
@@ -145,6 +163,7 @@ class DashboardStats(BaseModel):
     total_directories: int
     active_directories: int
 
+
 # Form detection response
 class DetectedFormField(BaseModel):
     field_name: str
@@ -153,6 +172,7 @@ class DetectedFormField(BaseModel):
     selector: str
     is_required: bool
     confidence_score: int
+
 
 class FormDetectionResponse(BaseModel):
     directory_id: int

@@ -29,6 +29,8 @@ python-dotenv==1.0.0
 httpx==0.26.0
 aiofiles==23.2.1
 pillow==10.2.0
+ruff==0.14.13
+mypy==1.19.1
 
 # Logging
 colorlog==6.8.0

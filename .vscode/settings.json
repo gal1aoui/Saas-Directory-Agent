@@ -1,0 +1,16 @@
+{
+  "editor.formatOnSave": true,
+
+  "[typescript]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+
+  "mypy.dmypyExecutable": "backend/venv/Scripts/dmypy.exe"
+}

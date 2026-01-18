@@ -1,0 +1,40 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Backend",
+      "type": "shell",
+      "command": "cd backend && venv\\Scripts\\activate && uvicorn app.main:app --reload",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "backend"
+      }
+    },
+    {
+      "label": "Frontend",
+      "type": "shell",
+      "command": "cd frontend && npm run dev",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "frontend"
+      }
+    },
+    {
+      "label": "Git",
+      "type": "shell",
+      "command": "git status",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "git"
+      }
+    },
+    {
+      "label": "Start Project",
+      "dependsOn": ["Backend", "Frontend", "Git"],
+      "dependsOrder": "parallel"
+    }
+  ]
+}

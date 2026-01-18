@@ -1,0 +1,7 @@
+[tool.ruff]
+line-length = 102
+lint.select = ["E", "F", "I", "B"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
