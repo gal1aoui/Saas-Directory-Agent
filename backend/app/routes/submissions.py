@@ -116,7 +116,7 @@ async def update_submission(
     if not submission:
         raise HTTPException(status_code=404, detail="Submission not found")
     
-    update_data = submission_update.dict(exclude_unset=True)
+    update_data = submission_update.model_dump(mode="json", exclude_unset=True)
     for field, value in update_data.items():
         setattr(submission, field, value)
     

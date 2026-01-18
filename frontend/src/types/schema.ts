@@ -31,9 +31,14 @@ export const SaasProductSchema = z.object({
   tagline: z.string().max(255).optional().nullable(),
   pricing_model: z.string().optional().nullable(),
   features: z.array(z.string()).optional().nullable(),
-  social_links: z.array(z.string()).optional().nullable(),
-  created_at: z.iso.datetime(),
-  updated_at: z.iso.datetime()
+  social_links: z.object({
+    twitter: z.string().optional(),
+    facebook: z.string().optional(),
+    linkedin: z.string().optional(),
+    github: z.string().optional()
+  }).optional().nullable(),
+  created_at: z.string(),
+  updated_at: z.string()
 });
 
 export const SaasProductCreateSchema = z.object({
@@ -75,19 +80,19 @@ export const DirectorySchema = z.object({
   total_submissions: z.number().int(),
   successful_submissions: z.number().int(),
   detected_form_structure: z.array(z.any()).optional().nullable(),
-  last_form_detection: z.iso.datetime().optional().nullable(),
-  created_at: z.iso.datetime(),
-  updated_at: z.iso.datetime()
+  last_form_detection: z.string().optional().nullable(),
+  created_at: z.string(),
+  updated_at: z.string()
 });
 
 export const DirectoryCreateSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255),
   url: z.url('Must be a valid URL'),
   submission_url: z.url('Must be a valid URL').optional(),
-  status: DirectoryStatusEnum.default('active'),
+  status: DirectoryStatusEnum.optional(),
   domain_authority: z.number().int().min(0).max(100).optional(),
   category: z.string().optional(),
-  requires_approval: z.boolean().default(true),
+  requires_approval: z.boolean().optional(),
   estimated_approval_time: z.string().optional()
 });
 
@@ -103,23 +108,23 @@ export const SubmissionSchema = z.object({
   saas_product_id: z.number(),
   directory_id: z.number(),
   status: SubmissionStatusEnum,
-  submitted_at: z.iso.datetime().optional().nullable(),
-  approved_at: z.iso.datetime().optional().nullable(),
-  rejected_at: z.iso.datetime().optional().nullable(),
+  submitted_at: z.string().optional().nullable(),
+  approved_at: z.string().optional().nullable(),
+  rejected_at: z.string().optional().nullable(),
   submission_data: z.array(z.any()).optional().nullable(),
   response_message: z.string().optional().nullable(),
   listing_url: z.url().optional().nullable(),
   retry_count: z.number().int(),
   max_retries: z.number().int(),
-  last_retry_at: z.iso.datetime().optional().nullable(),
+  last_retry_at: z.string().optional().nullable(),
   error_log: z.array(z.object({
     timestamp: z.string(),
     error: z.string()
   })).optional().nullable(),
   detected_fields: z.array(z.any()).optional().nullable(),
   form_screenshot_url: z.string().optional().nullable(),
-  created_at: z.iso.datetime(),
-  updated_at: z.iso.datetime()
+  created_at: z.string(),
+  updated_at: z.string()
 });
 
 export const SubmissionWithDetailsSchema = SubmissionSchema.extend({

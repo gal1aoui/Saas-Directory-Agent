@@ -13,7 +13,7 @@ async def create_saas_product(
     db: Session = Depends(get_db)
 ):
     """Create a new SaaS product"""
-    db_saas = SaasProduct(**saas.dict())
+    db_saas = SaasProduct(**saas.model_dump(mode="json"))
     db.add(db_saas)
     db.commit()
     db.refresh(db_saas)
@@ -51,7 +51,7 @@ async def update_saas_product(
     if not saas:
         raise HTTPException(status_code=404, detail="SaaS product not found")
     
-    update_data = saas_update.dict(exclude_unset=True)
+    update_data = saas_update.model_dump(mode="json", exclude_unset=True)
     for field, value in update_data.items():
         setattr(saas, field, value)
     

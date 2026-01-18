@@ -160,7 +160,7 @@ const DirectoryManager: React.FC = () => {
                               />
                             </div>
                           </div>
-                          <span className="text-sm text-gray-700 min-w-[3rem]">
+                          <span className="text-sm text-gray-700 min-w-12">
                             {getSuccessRate(directory).toFixed(0)}%
                           </span>
                         </div>
@@ -260,6 +260,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
       }
       onSuccess();
     } catch (error: any) {
+      console.log(error);
       alert(error.detail || 'Failed to save directory');
     }
   };
@@ -267,7 +268,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({ directory, onClose, onSuc
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-white/30 backdrop-blur-sm bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-start mb-6">

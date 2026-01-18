@@ -64,7 +64,7 @@ class ApiService {
   // SaaS Products API
   async getSaasProducts(): Promise<SaasProduct[]> {
     const response = await this.client.get<SaasProduct[]>('/saas');
-    return z.array(SaasProductSchema).parse(response.data);
+    return response.data;
   }
 
   async getSaasProduct(id: number): Promise<SaasProduct> {
@@ -89,7 +89,7 @@ class ApiService {
   // Directories API
   async getDirectories(filters?: DirectoryFilters): Promise<Directory[]> {
     const response = await this.client.get<Directory[]>('/directories', { params: filters });
-    return z.array(DirectorySchema).parse(response.data);
+    return response.data;
   }
 
   async getDirectory(id: number): Promise<Directory> {

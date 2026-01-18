@@ -13,7 +13,7 @@ async def create_directory(
     db: Session = Depends(get_db)
 ):
     """Add a new directory"""
-    db_directory = Directory(**directory.dict())
+    db_directory = Directory(**directory.model_dump(mode="json"))
     db.add(db_directory)
     db.commit()
     db.refresh(db_directory)
@@ -56,7 +56,7 @@ async def update_directory(
     if not directory:
         raise HTTPException(status_code=404, detail="Directory not found")
     
-    update_data = directory_update.dict(exclude_unset=True)
+    update_data = directory_update.model_dump(mode="json", exclude_unset=True)
     for field, value in update_data.items():
         setattr(directory, field, value)
     
