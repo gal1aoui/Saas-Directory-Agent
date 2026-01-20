@@ -22,7 +22,6 @@ class BrowserAutomation:
         self.browser: Optional[Browser] = None
         self.settings = settings
         self._lock = asyncio.Lock()
-        self._is_connected_mode = False  # Track if connected via CDP
 
     async def __aenter__(self):
         await self.initialize()
@@ -40,66 +39,31 @@ class BrowserAutomation:
             try:
                 self.playwright = await async_playwright().start()
 
-                # Try to connect to existing Chrome instance first
-                chrome_connected = False
+                launch_options = {
+                    "headless": self.settings.HEADLESS_BROWSER,
+                    "args": [
+                        "--no-sandbox",
+                        "--disable-setuid-sandbox",
+                        "--disable-dev-shm-usage",
+                        "--disable-blink-features=AutomationControlled",
+                        "--disable-web-security",
+                    ],
+                }
+
+                if sys.platform == "win32":
+                    launch_options["channel"] = "chrome"
+
                 try:
-                    # Connect to existing Chrome (must be started with --remote-debugging-port=9222)
-                    self.browser = await self.playwright.chromium.connect_over_cdp(
-                        "http://localhost:9222"
-                    )
-                    self._is_connected_mode = True
-                    logger.info("✅ Connected to existing Chrome via CDP")
-                    chrome_connected = True
+                    self.browser = await self.playwright.chromium.launch(**launch_options)
+                except Exception:
+                    launch_options.pop("channel", None)
+                    self.browser = await self.playwright.chromium.launch(**launch_options)
 
-                except Exception as cdp_error:
-                    logger.warning(
-                        f"⚠️ CDP connection failed: {cdp_error}. Starting new browser instance..."
-                    )
-                    self._is_connected_mode = False
-                    self.browser = None
-
-                # If CDP connection failed, launch a new browser
-                if not chrome_connected:
-                    launch_options = {
-                        "headless": self.settings.HEADLESS_BROWSER,
-                        "args": [
-                            "--no-sandbox",
-                            "--disable-setuid-sandbox",
-                            "--disable-dev-shm-usage",
-                            "--disable-blink-features=AutomationControlled",
-                            "--disable-web-security",
-                        ],
-                    }
-
-                    if sys.platform == "win32":
-                        launch_options["channel"] = "chrome"
-
-                    try:
-                        self.browser = await self.playwright.chromium.launch(**launch_options)
-                    except Exception as launch_error:
-                        logger.warning(f"⚠️ Failed to launch with channel: {launch_error}")
-                        launch_options.pop("channel", None)
-                        self.browser = await self.playwright.chromium.launch(**launch_options)
-
-                    logger.info("✅ Browser launched successfully")
-
-                if not self.browser:
-                    raise RuntimeError("Failed to initialize browser via both CDP and launch")
+                logger.info("✅ Browser initialized")
 
             except Exception as e:
                 logger.error(f"❌ Browser initialization failed: {str(e)}")
                 raise RuntimeError(f"Browser initialization failed: {str(e)}")
-
-    async def _check_chrome_debug_port(self, host: str = "localhost", port: int = 9222) -> bool:
-        """Check if Chrome is running on the debug port"""
-        import socket
-
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            result = sock.connect_ex((host, port))
-            return result == 0
-        finally:
-            sock.close()
 
     async def close(self):
         """Close browser and playwright"""
@@ -119,29 +83,10 @@ class BrowserAutomation:
         if not self.browser:
             await self.initialize()
 
-        # If connected via CDP, try to reuse an existing page/tab to preserve session
-        if self._is_connected_mode:
-            try:
-                pages = self.browser.contexts[0].pages if self.browser.contexts else []
-                if pages:
-                    page = pages[0]
-                    logger.info("📄 Reusing existing tab to preserve session")
-                else:
-                    page = await self.browser.new_page(
-                        viewport={"width": 1920, "height": 1080},
-                        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    )
-            except Exception as e:
-                logger.warning(f"⚠️ Failed to reuse page: {e}, creating new page")
-                page = await self.browser.new_page(
-                    viewport={"width": 1920, "height": 1080},
-                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                )
-        else:
-            page = await self.browser.new_page(
-                viewport={"width": 1920, "height": 1080},
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            )
+        page = await self.browser.new_page(
+            viewport={"width": 1920, "height": 1080},
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        )
 
         try:
             await page.goto(url, wait_until="domcontentloaded", timeout=self.settings.BROWSER_TIMEOUT)
@@ -166,9 +111,7 @@ class BrowserAutomation:
             logger.error(f"❌ Error navigating to {url}: {str(e)}")
             raise
         finally:
-            # Don't close pages in connected mode - preserve session
-            if not self._is_connected_mode:
-                await page.close()
+            await page.close()
 
     async def fill_and_submit_form(
         self, url: str, field_mapping: Dict[str, any], submit_button_selector: Optional[str] = None
@@ -177,35 +120,16 @@ class BrowserAutomation:
         if not self.browser:
             await self.initialize()
 
-        # If connected via CDP, try to reuse an existing page/tab to preserve session
-        if self._is_connected_mode:
-            try:
-                pages = self.browser.contexts[0].pages if self.browser.contexts else []
-                if pages:
-                    page = pages[0]
-                    logger.info("📄 Reusing existing tab to preserve session")
-                else:
-                    page = await self.browser.new_page(
-                        viewport={"width": 1920, "height": 1080},
-                        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    )
-            except Exception as e:
-                logger.warning(f"⚠️ Failed to reuse page: {e}, creating new page")
-                page = await self.browser.new_page(
-                    viewport={"width": 1920, "height": 1080},
-                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                )
-        else:
-            page = await self.browser.new_page(
-                viewport={"width": 1920, "height": 1080},
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            )
+        page = await self.browser.new_page(
+            viewport={"width": 1920, "height": 1080},
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        )
 
         result = {"success": False, "message": "", "listing_url": None, "screenshot_path": None}
 
         try:
             await page.goto(url, wait_until="domcontentloaded", timeout=self.settings.BROWSER_TIMEOUT)
-            await page.wait_for_load_state("networkidle", timeout=600000)
+            await page.wait_for_load_state("networkidle", timeout=10000)
 
             # Fill fields
             for selector, value in field_mapping.items():
@@ -283,9 +207,7 @@ class BrowserAutomation:
             logger.error(f"❌ {result['message']}")
             return result
         finally:
-            # Don't close pages in connected mode - preserve session
-            if not self._is_connected_mode:
-                await page.close()
+            await page.close()
 
     async def _fill_field(self, page: Page, selector: str, value: any):
         """Fill a single form field"""
