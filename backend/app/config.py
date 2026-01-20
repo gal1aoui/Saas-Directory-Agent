@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "SaaS Directory Agent"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
-    SECRET_KEY: str = "yfWXZJO4TxLKOVdPYlnEDy8mE3zlHd0ZUZ4IGA8K27A"
+    SECRET_KEY: str 
 
     # CORS - Single origin
     ALLOWED_ORIGINS: str = "http://localhost:5173"
