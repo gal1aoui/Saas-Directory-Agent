@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:5173"
 
     # Browser Automation
-    HEADLESS_BROWSER: bool = False
+    HEADLESS_BROWSER: bool = True
     BROWSER_TIMEOUT: int = 30000
 
     # AI Settings

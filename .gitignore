@@ -2,5 +2,5 @@ venv
 .mypy_cache
 .ruff_cache
 *.env
-backend/*/__pycache__
+__pycache__
 uploads
