@@ -42,8 +42,8 @@ class SaasProduct(Base):
     category = Column(String(100))
     logo_url = Column(String(500))
     contact_email = Column(String(255), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Additional fields that might be needed
     tagline = Column(String(255))
@@ -64,6 +64,16 @@ class Directory(Base):
     submission_url = Column(String(500))  # Specific submission page
     status = Column(Enum(DirectoryStatus), default=DirectoryStatus.ACTIVE)
 
+    # Login credentials (encrypted in production)
+    requires_login = Column(Boolean, default=False)
+    login_url = Column(String(500))
+    login_username = Column(String(255))
+    login_password = Column(String(255))
+
+    # Multi-step form support
+    is_multi_step = Column(Boolean, default=False)
+    step_count = Column(Integer, default=1)
+
     # Metadata
     domain_authority = Column(Integer)  # SEO metric
     category = Column(String(100))
@@ -78,8 +88,8 @@ class Directory(Base):
     total_submissions = Column(Integer, default=0)
     successful_submissions = Column(Integer, default=0)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Relationships
     submissions = relationship("Submission", back_populates="directory")
@@ -114,8 +124,12 @@ class Submission(Base):
     detected_fields = Column(JSON)  # Fields detected by AI
     form_screenshot_url = Column(String(500))  # Screenshot of the form
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Multi-step tracking
+    current_step = Column(Integer, default=1)
+    completed_steps = Column(JSON)
+
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Relationships
     saas_product = relationship("SaasProduct", back_populates="submissions")
@@ -139,4 +153,4 @@ class FormField(Base):
     # AI confidence
     confidence_score = Column(Integer)  # 0-100
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)

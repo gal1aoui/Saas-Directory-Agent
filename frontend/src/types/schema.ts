@@ -74,6 +74,12 @@ export const DirectorySchema = z.object({
   url: z.url("Must be a valid URL"),
   submission_url: z.url().optional().nullable(),
   status: DirectoryStatusEnum,
+  requires_login: z.boolean().optional(),
+  login_url: z.string().optional().nullable(),
+  login_username: z.string().optional().nullable(),
+  login_password: z.string().optional().nullable(),
+  is_multi_step: z.boolean().optional(),
+  step_count: z.number().int().optional(),
   domain_authority: z.number().int().min(0).max(100).optional().nullable(),
   category: z.string().optional().nullable(),
   requires_approval: z.boolean(),
@@ -91,6 +97,12 @@ export const DirectoryCreateSchema = z.object({
   url: z.url("Must be a valid URL"),
   submission_url: z.url("Must be a valid URL").optional(),
   status: DirectoryStatusEnum.optional(),
+  requires_login: z.boolean().optional(),
+  login_url: z.string().optional(),
+  login_username: z.string().optional(),
+  login_password: z.string().optional(),
+  is_multi_step: z.boolean().optional(),
+  step_count: z.number().int().optional(),
   domain_authority: z.number().int().min(0).max(100).optional(),
   category: z.string().optional(),
   requires_approval: z.boolean().optional(),
@@ -117,7 +129,7 @@ export const SubmissionSchema = z.object({
   listing_url: z.url().optional().nullable(),
   retry_count: z.number().int(),
   max_retries: z.number().int(),
-  last_retry_at: z.string().optional().nullable(),
+  last_retry_at: z.coerce.date().optional().nullable(),
   error_log: z
     .array(
       z.object({
@@ -129,6 +141,8 @@ export const SubmissionSchema = z.object({
     .nullable(),
   detected_fields: z.array(z.any()).optional().nullable(),
   form_screenshot_url: z.string().optional().nullable(),
+  current_step: z.number().int().optional(),
+  completed_steps: z.array(z.number()).optional().nullable(),
   created_at: z.coerce.date(),
   updated_at: z.coerce.date(),
 });

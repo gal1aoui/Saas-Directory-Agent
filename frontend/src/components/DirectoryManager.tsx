@@ -263,6 +263,7 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm<DirectoryCreate>({
     resolver: zodResolver(DirectoryCreateSchema),
     defaultValues: directory
@@ -276,12 +277,24 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({
           requires_approval: directory.requires_approval,
           estimated_approval_time:
             directory.estimated_approval_time || undefined,
+          requires_login: directory.requires_login || false,
+          login_url: directory.login_url || undefined,
+          login_username: directory.login_username || undefined,
+          login_password: directory.login_password || undefined,
+          is_multi_step: directory.is_multi_step || false,
+          step_count: directory.step_count || 1,
         }
       : {
           status: "active",
           requires_approval: true,
+          requires_login: false,
+          is_multi_step: false,
+          step_count: 1,
         },
   });
+
+  const requiresLogin = watch("requires_login");
+  const isMultiStep = watch("is_multi_step");
 
   const onSubmit: SubmitHandler<DirectoryCreate> = async (data) => {
     try {
@@ -438,6 +451,107 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="24 hours"
               />
+            </div>
+
+            {/* Login Section */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                Login Settings
+              </h3>
+
+              <div className="flex items-center gap-2 mb-4">
+                <input
+                  {...register("requires_login")}
+                  type="checkbox"
+                  id="requires_login"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label
+                  htmlFor="requires_login"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Requires Login
+                </label>
+              </div>
+
+              {requiresLogin && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Login URL
+                    </label>
+                    <input
+                      {...register("login_url")}
+                      type="url"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="https://example.com/login"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mt-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Username
+                      </label>
+                      <input
+                        {...register("login_username")}
+                        type="text"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="username"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Password
+                      </label>
+                      <input
+                        {...register("login_password")}
+                        type="password"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="password"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Multi-Step Form Section */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                Form Settings
+              </h3>
+
+              <div className="flex items-center gap-2 mb-4">
+                <input
+                  {...register("is_multi_step")}
+                  type="checkbox"
+                  id="is_multi_step"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                />
+                <label
+                  htmlFor="is_multi_step"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Multi-Step Form
+                </label>
+              </div>
+
+              {isMultiStep && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Number of Steps
+                  </label>
+                  <input
+                    {...register("step_count", { valueAsNumber: true })}
+                    type="number"
+                    min="2"
+                    max="10"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="2"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}

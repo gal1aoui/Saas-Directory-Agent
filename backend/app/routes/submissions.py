@@ -146,7 +146,7 @@ async def update_submission(
         setattr(submission, field, value)
 
     if submission_update.status == SubmissionStatus.APPROVED:
-        submission.approved_at = datetime.utcnow()
+        submission.approved_at = datetime.now()
 
     db.commit()
     db.refresh(submission)

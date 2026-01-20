@@ -74,7 +74,7 @@ async def root():
         "name": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "status": "running",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now().isoformat(),
     }
 
 
@@ -83,7 +83,7 @@ async def health_check():
     """Detailed health check"""
     return {
         "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now().isoformat(),
         "database": "connected",
         "ai_provider": "Ollama",
         "ai_model": settings.OLLAMA_MODEL,

@@ -26,7 +26,7 @@ class WorkflowManager:
         self.is_running = False
 
     async def submit_to_directory(self, saas_product_id: int, directory_id: int) -> Submission:
-        """Execute single submission to a directory."""
+        """Execute single submission with login and multi-step support."""
         # Get SaaS product and directory
         saas_product = self.db.query(SaasProduct).filter(SaasProduct.id == saas_product_id).first()
 
@@ -46,66 +46,82 @@ class WorkflowManager:
         self.db.refresh(submission)
 
         try:
-            # Step 1: Check cached form structure
-            if directory.detected_form_structure:
-                form_structure = directory.detected_form_structure
-            else:
-                # Step 2: Analyze form
-                form_structure = await self._analyze_directory_form(directory)
+            # Use persistent browser context
+            async with BrowserAutomation() as browser:
+                # Step 1: Login if required
+                if directory.requires_login:
+                    login_success = await browser.login_if_required(
+                        login_url=directory.login_url,
+                        username=directory.login_username,
+                        password=directory.login_password,
+                    )
 
-                # Cache it
-                directory.detected_form_structure = form_structure
-                directory.last_form_detection = datetime.utcnow()
+                    if not login_success:
+                        raise Exception("Login failed")
+
+                    logger.info(f"✅ Logged in to {directory.name}")
+
+                # Step 2: Check cached form structure
+                if directory.detected_form_structure:
+                    form_structure = directory.detected_form_structure
+                else:
+                    # Analyze form
+                    form_structure = await self._analyze_directory_form(browser, directory)
+
+                    # Cache it
+                    directory.detected_form_structure = form_structure
+                    directory.last_form_detection = datetime.now()
+                    self.db.commit()
+
+                # Step 3: Map SaaS data to form fields
+                saas_data = self._saas_product_to_dict(saas_product)
+                fields = form_structure.get("fields", [])
+                field_mapping = self.ai_reader.map_saas_data_to_fields(saas_data, fields)
+
+                if not field_mapping:
+                    raise Exception("No fields could be mapped")
+
+                submission.detected_fields = form_structure
                 self.db.commit()
 
-            # Step 3: Map SaaS data to form fields
-            saas_data = self._saas_product_to_dict(saas_product)
-            fields = form_structure.get("fields", [])
-            field_mapping = self.ai_reader.map_saas_data_to_fields(saas_data, fields)
-
-            if not field_mapping:
-                raise Exception("No fields could be mapped")
-
-            submission.detected_fields = form_structure
-            self.db.commit()
-
-            # Step 4: Fill and submit form
-            async with BrowserAutomation() as browser:
+                # Step 4: Fill and submit form (with multi-step support)
                 submission_result = await browser.fill_and_submit_form(
                     url=directory.submission_url or directory.url,
                     field_mapping=field_mapping,
                     submit_button_selector=form_structure.get("submit_button_selector"),
+                    is_multi_step=directory.is_multi_step,
+                    step_count=directory.step_count,
                 )
 
-            # Step 5: Update submission status
-            if submission_result["success"]:
-                submission.status = SubmissionStatus.SUBMITTED
-                submission.submitted_at = datetime.utcnow()
-                submission.listing_url = submission_result.get("listing_url")
-                submission.response_message = submission_result["message"]
+                # Step 5: Update submission status
+                if submission_result["success"]:
+                    submission.status = SubmissionStatus.SUBMITTED
+                    submission.submitted_at = datetime.now()
+                    submission.listing_url = submission_result.get("listing_url")
+                    submission.response_message = submission_result["message"]
 
-                directory.total_submissions += 1
-                directory.successful_submissions += 1
+                    directory.total_submissions += 1
+                    directory.successful_submissions += 1
 
-                logger.info(f"✅ Submission {submission.id} to {directory.name} successful")
-            else:
-                submission.status = SubmissionStatus.FAILED
-                submission.response_message = submission_result["message"]
-                directory.total_submissions += 1
+                    logger.info(f"✅ Submission {submission.id} to {directory.name} successful")
+                else:
+                    submission.status = SubmissionStatus.FAILED
+                    submission.response_message = submission_result["message"]
+                    directory.total_submissions += 1
 
-                logger.error(f"❌ Submission {submission.id} to {directory.name} failed")
+                    logger.error(f"❌ Submission {submission.id} to {directory.name} failed")
 
-            # Store data
-            submission.submission_data = {
-                "field_mapping": {k: str(v) for k, v in field_mapping.items()},
-                "form_structure": form_structure,
-            }
+                # Store data
+                submission.submission_data = {
+                    "field_mapping": {k: str(v) for k, v in field_mapping.items()},
+                    "form_structure": form_structure,
+                }
 
-            if submission_result.get("screenshot_path"):
-                submission.form_screenshot_url = submission_result["screenshot_path"]
+                if submission_result.get("screenshot_path"):
+                    submission.form_screenshot_url = submission_result["screenshot_path"]
 
-            self.db.commit()
-            self.db.refresh(submission)
+                self.db.commit()
+                self.db.refresh(submission)
 
             return submission
 
@@ -118,7 +134,7 @@ class WorkflowManager:
             if not submission.error_log:
                 submission.error_log = []
 
-            submission.error_log.append({"timestamp": datetime.utcnow().isoformat(), "error": str(e)})
+            submission.error_log.append({"timestamp": datetime.now().isoformat(), "error": str(e)})
 
             self.db.commit()
             self.db.refresh(submission)
@@ -126,7 +142,7 @@ class WorkflowManager:
             return submission
 
     async def bulk_submit(self, saas_product_id: int, directory_ids: List[int]) -> List[Submission]:
-        """Submit to multiple directories concurrently."""
+        """Submit to multiple directories concurrently with persistent browser sessions.."""
         submissions = []
         semaphore = asyncio.Semaphore(self.settings.CONCURRENT_SUBMISSIONS)
 
@@ -156,7 +172,7 @@ class WorkflowManager:
                 (Submission.last_retry_at.is_(None))
                 | (
                     Submission.last_retry_at
-                    < datetime.utcnow() - timedelta(seconds=self.settings.RETRY_DELAY)
+                    < datetime.now() - timedelta(seconds=self.settings.RETRY_DELAY)
                 ),
             )
             .all()
@@ -165,13 +181,25 @@ class WorkflowManager:
         for submission in failed:
             try:
                 submission.retry_count += 1
-                submission.last_retry_at = datetime.utcnow()
+                submission.last_retry_at = datetime.now()
                 submission.status = SubmissionStatus.PENDING
                 self.db.commit()
 
                 await self.submit_to_directory(submission.saas_product_id, submission.directory_id)
             except Exception as e:
                 logger.error(f"❌ Retry failed for submission {submission.id}: {e}")
+
+    async def _analyze_directory_form(self, browser: BrowserAutomation, directory: Directory) -> Dict:
+        """Analyze directory form structure using existing browser context"""
+        screenshot_path, html_content = await browser.navigate_and_screenshot(
+            directory.submission_url or directory.url
+        )
+
+        form_structure = await self.ai_reader.analyze_form_from_screenshot(
+            screenshot_path=screenshot_path, html_content=html_content
+        )
+
+        return form_structure
 
     async def _analyze_directory_form(self, directory: Directory) -> Dict:
         """Analyze directory form structure using AI"""
