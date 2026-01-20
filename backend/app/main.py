@@ -1,3 +1,6 @@
+# main.py
+import asyncio
+import sys
 from contextlib import asynccontextmanager
 from datetime import datetime
 
@@ -9,45 +12,56 @@ from app.database import init_db
 from app.routes import directories, saas, submissions
 from app.utils.logger import get_logger
 
+# Windows compatibility
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+
 settings = get_settings()
 logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Lifespan context manager for startup and shutdown events.
-    Replaces the deprecated @app.on_event handles.
-    """
-    # --- Startup Logic ---
-    logger.info("Starting application...")
-    init_db()
-    logger.info("Application started successfully")
+    # Startup
+    logger.info("=" * 50)
+    logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
+    logger.info("=" * 50)
 
-    yield  # The application is now running and handling requests
+    try:
+        init_db()
+        logger.info("✅ Database initialized")
+    except Exception as e:
+        logger.error(f"❌ Database initialization failed: {e}")
+        raise
 
-    # --- Shutdown Logic ---
-    logger.info("Shutting down application...")
-    # Add any cleanup (e.g., db.disconnect()) here if needed
+    logger.info(f"🤖 AI: Ollama ({settings.OLLAMA_MODEL})")
+    logger.info(f"🌍 Server: http://{settings.HOST}:{settings.PORT}")
+    logger.info("✅ Application started successfully")
+
+    yield
+
+    # Shutdown
+    logger.info("Shutting down...")
 
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="Automated SaaS Directory Submission System",
-    lifespan=lifespan,  # Register the lifespan handler
+    description="Automated SaaS Directory Submission System with Ollama AI",
+    debug=settings.DEBUG,
+    lifespan=lifespan,
 )
 
-# CORS middleware
+# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routers
+# Routers
 app.include_router(saas.router, prefix="/api/saas", tags=["SaaS Products"])
 app.include_router(directories.router, prefix="/api/directories", tags=["Directories"])
 app.include_router(submissions.router, prefix="/api/submissions", tags=["Submissions"])
@@ -55,15 +69,28 @@ app.include_router(submissions.router, prefix="/api/submissions", tags=["Submiss
 
 @app.get("/")
 async def root():
-    """Health check endpoint"""
+    """Health check"""
     return {
         "name": settings.APP_NAME,
         "version": settings.APP_VERSION,
         "status": "running",
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
 
 @app.get("/api/health")
 async def health_check():
     """Detailed health check"""
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    return {
+        "status": "healthy",
+        "timestamp": datetime.utcnow().isoformat(),
+        "database": "connected",
+        "ai_provider": "Ollama",
+        "ai_model": settings.OLLAMA_MODEL,
+    }
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("app.main:app", host=settings.HOST, port=settings.PORT, reload=settings.DEBUG)

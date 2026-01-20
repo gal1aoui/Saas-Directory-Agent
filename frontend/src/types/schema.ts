@@ -36,8 +36,8 @@ export const SaasProductSchema = z.object({
     })
     .optional()
     .nullable(),
-  created_at: z.string(),
-  updated_at: z.string(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
 });
 
 export const SaasProductCreateSchema = z.object({
@@ -82,8 +82,8 @@ export const DirectorySchema = z.object({
   successful_submissions: z.number().int(),
   detected_form_structure: z.array(z.any()).optional().nullable(),
   last_form_detection: z.string().optional().nullable(),
-  created_at: z.string(),
-  updated_at: z.string(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
 });
 
 export const DirectoryCreateSchema = z.object({
@@ -109,9 +109,9 @@ export const SubmissionSchema = z.object({
   saas_product_id: z.number(),
   directory_id: z.number(),
   status: SubmissionStatusEnum,
-  submitted_at: z.string().optional().nullable(),
-  approved_at: z.string().optional().nullable(),
-  rejected_at: z.string().optional().nullable(),
+  submitted_at: z.coerce.date().optional().nullable(),
+  approved_at: z.coerce.date().optional().nullable(),
+  rejected_at: z.coerce.date().optional().nullable(),
   submission_data: z.array(z.any()).optional().nullable(),
   response_message: z.string().optional().nullable(),
   listing_url: z.url().optional().nullable(),
@@ -121,7 +121,7 @@ export const SubmissionSchema = z.object({
   error_log: z
     .array(
       z.object({
-        timestamp: z.string(),
+        timestamp: z.coerce.date(),
         error: z.string(),
       }),
     )
@@ -129,8 +129,8 @@ export const SubmissionSchema = z.object({
     .nullable(),
   detected_fields: z.array(z.any()).optional().nullable(),
   form_screenshot_url: z.string().optional().nullable(),
-  created_at: z.string(),
-  updated_at: z.string(),
+  created_at: z.coerce.date(),
+  updated_at: z.coerce.date(),
 });
 
 export const SubmissionWithDetailsSchema = SubmissionSchema.extend({

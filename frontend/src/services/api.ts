@@ -130,7 +130,8 @@ class ApiService {
         params: filters,
       },
     );
-    return z.array(SubmissionWithDetailsSchema).parse(response.data);
+    console.log("data: ",response.data);
+    return response.data;
   }
 
   async getSubmission(id: number): Promise<SubmissionWithDetails> {
@@ -142,6 +143,7 @@ class ApiService {
 
   async createSubmission(data: SubmissionCreate): Promise<Submission> {
     const response = await this.client.post<Submission>("/submissions", data);
+    console.log("create: ", this.validate(SubmissionSchema, response.data), response.data, response.status);
     return this.validate(SubmissionSchema, response.data);
   }
 
@@ -150,6 +152,7 @@ class ApiService {
       "/submissions/bulk",
       data,
     );
+    console.log("bulk create: ", z.array(SubmissionSchema).parse(response.data), response.data, response.status);
     return z.array(SubmissionSchema).parse(response.data);
   }
 

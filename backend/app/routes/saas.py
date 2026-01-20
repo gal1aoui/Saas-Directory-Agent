@@ -27,7 +27,9 @@ async def create_saas_product(saas: SaasProductCreate, db: Annotated[Session, De
 
 
 @router.get("/", response_model=List[SaasProductSchema])
-async def list_saas_products(db: Annotated[Session, Depends(get_db)], skip: int = 0, limit: int = 100):
+async def list_saas_products(
+    db: Annotated[Session, Depends(get_db)], skip: int = 0, limit: int = 100
+):
     """List all SaaS products"""
     products = db.query(SaasProduct).offset(skip).limit(limit).all()
     return products

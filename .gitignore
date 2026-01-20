@@ -3,3 +3,4 @@ venv
 .ruff_cache
 *.env
 backend/*/__pycache__
+uploads

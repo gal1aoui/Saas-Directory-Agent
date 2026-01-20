@@ -36,6 +36,7 @@ async def list_directories(
     directories = query.offset(skip).limit(limit).all()
     return directories
 
+
 @router.get("/{directory_id}", response_model=DirectorySchema)
 async def get_directory(
     directory_id: int,
@@ -50,7 +51,9 @@ async def get_directory(
 
 @router.put("/{directory_id}", response_model=DirectorySchema)
 async def update_directory(
-    directory_id: int, directory_update: DirectoryUpdate, db: Annotated[Session, Depends(get_db)],
+    directory_id: int,
+    directory_update: DirectoryUpdate,
+    db: Annotated[Session, Depends(get_db)],
 ):
     """Update a directory"""
     directory = db.query(Directory).filter(Directory.id == directory_id).first()
@@ -67,7 +70,10 @@ async def update_directory(
 
 
 @router.delete("/{directory_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_directory(directory_id: int, db: Annotated[Session, Depends(get_db)],):
+async def delete_directory(
+    directory_id: int,
+    db: Annotated[Session, Depends(get_db)],
+):
     """Delete a directory"""
     directory = db.query(Directory).filter(Directory.id == directory_id).first()
     if not directory:

@@ -118,6 +118,11 @@ class SubmissionUpdate(BaseModel):
     listing_url: Optional[HttpUrl] = None
 
 
+class SubmissionError(BaseModel):
+    timestamp: datetime
+    error: str
+
+
 class Submission(SubmissionBase):
     id: int
     status: SubmissionStatus
@@ -130,7 +135,7 @@ class Submission(SubmissionBase):
     retry_count: int
     max_retries: int
     last_retry_at: Optional[datetime] = None
-    error_log: Optional[List[str]] = None
+    error_log: Optional[List[SubmissionError]] = None
     detected_fields: Optional[Dict[str, Any]] = None
     form_screenshot_url: Optional[str] = None
     created_at: datetime

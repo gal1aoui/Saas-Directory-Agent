@@ -6,7 +6,16 @@ from app.config import get_settings
 
 settings = get_settings()
 
-engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True, echo=settings.DEBUG)
+# Windows-compatible connection string
+engine = create_engine(
+    settings.DATABASE_URL,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    echo=settings.DEBUG,
+    # Windows-specific settings
+    connect_args={"options": "-c timezone=utc"},
+)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
