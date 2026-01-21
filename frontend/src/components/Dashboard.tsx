@@ -9,26 +9,37 @@ import {
   Send,
   TrendingUp,
   XCircle,
+  BarChart3,
+  Activity,
 } from "lucide-react";
 import type React from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { useDashboardStats, useSubmissions } from "../store";
 import type { SubmissionStatus } from "../types/schema";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface StatCard {
   title: string;
   value: number;
   icon: LucideIcon;
   color: string;
-  bgColor: string;
-  iconColor: string;
+  trend?: string;
 }
 
 interface ChartData {
   name: string;
   value: number;
   color: string;
-  [key: string]: string | number; // Index signature for Recharts
+  [key: string]: string | number;
 }
 
 const Dashboard: React.FC = () => {
@@ -45,26 +56,34 @@ const Dashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center gap-2">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+          <p className="text-sm text-muted-foreground">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
   if (statsError || !stats) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <p className="text-gray-600">Failed to load dashboard data</p>
-          <button
-            type="button"
-            onClick={() => refetchStats()}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-white" />
+              <CardTitle>Error Loading Dashboard</CardTitle>
+            </div>
+            <CardDescription>
+              Failed to load dashboard data. Please try again.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => refetchStats()} className="w-full">
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -75,32 +94,24 @@ const Dashboard: React.FC = () => {
       value: stats.total_submissions,
       icon: Send,
       color: "blue",
-      bgColor: "bg-blue-50",
-      iconColor: "text-blue-600",
     },
     {
       title: "Approved",
       value: stats.approved_submissions,
       icon: CheckCircle,
       color: "green",
-      bgColor: "bg-green-50",
-      iconColor: "text-green-600",
     },
     {
       title: "Pending",
       value: stats.pending_submissions,
       icon: Clock,
       color: "yellow",
-      bgColor: "bg-yellow-50",
-      iconColor: "text-yellow-600",
     },
     {
       title: "Failed",
       value: stats.failed_submissions,
       icon: XCircle,
       color: "red",
-      bgColor: "bg-red-50",
-      iconColor: "text-red-600",
     },
   ];
 
@@ -112,152 +123,225 @@ const Dashboard: React.FC = () => {
   ].filter((item) => item.value > 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground mt-2">
             Overview of your SaaS directory submissions
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {statCards.map((stat, index) => (
-            <div key={index} className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">{stat.title}</p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {stat.value}
-                  </p>
-                </div>
-                <div className={`${stat.bgColor} p-3 rounded-lg`}>
-                  <stat.icon className={`h-6 w-6 ${stat.iconColor}`} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="overview">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="analytics">
+              <Activity className="h-4 w-4 mr-2" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Success Rate
-              </h2>
-              <TrendingUp className="h-5 w-5 text-green-600" />
+          <TabsContent value="overview" className="space-y-4">
+            {/* Stats Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {statCards.map((stat, index) => (
+                <Card key={index}>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">
+                      {stat.title}
+                    </CardTitle>
+                    <stat.icon className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {stat.title.toLowerCase()} this month
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            <div className="flex items-end">
-              <span className="text-5xl font-bold text-green-600">
-                {stats.success_rate.toFixed(1)}%
-              </span>
-            </div>
-            <p className="text-sm text-gray-600 mt-2">
-              Based on {stats.total_submissions} total submissions
-            </p>
-          </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Directories
-              </h2>
-              <Globe className="h-5 w-5 text-blue-600" />
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Total Directories</span>
-                <span className="text-2xl font-bold text-gray-900">
-                  {stats.total_directories}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Active Directories</span>
-                <span className="text-2xl font-bold text-green-600">
-                  {stats.active_directories}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Submissions Breakdown
-            </h2>
-            {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={chartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) =>
-                      `${name} ${(percent ?? 0 * 100).toFixed(0)}%`
-                    }
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-75 text-gray-500">
-                <div className="text-center">
-                  <Database className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                  <p>No submissions yet</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Recent Submissions
-            </h2>
-            <div className="space-y-3">
-              {recentSubmissions.slice(0, 5).map((submission) => (
-                <div
-                  key={submission.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center space-x-3">
-                    <StatusIcon status={submission.status} />
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {submission.directory.name}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        {format(
-                          new Date(submission.created_at),
-                          "MMM dd, yyyy",
-                        )}
-                      </p>
+            {/* Charts Row */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+              {/* Success Rate Card */}
+              <Card className="col-span-4">
+                <CardHeader>
+                  <CardTitle>Success Rate</CardTitle>
+                  <CardDescription>
+                    Based on {stats.total_submissions} total submissions
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-5xl font-bold text-green-600">
+                          {stats.success_rate.toFixed(1)}%
+                        </span>
+                        <TrendingUp className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div className="mt-4 space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            Successful
+                          </span>
+                          <span className="font-medium">
+                            {stats.approved_submissions +
+                              stats.submitted_submissions}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Failed</span>
+                          <span className="font-medium">
+                            {stats.failed_submissions}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <span
-                    className={`text-xs px-2 py-1 rounded-full ${getStatusColor(submission.status)}`}
-                  >
-                    {submission.status}
-                  </span>
-                </div>
-              ))}
-              {recentSubmissions.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <Database className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                  <p>No submissions yet</p>
-                </div>
-              )}
+                </CardContent>
+              </Card>
+
+              {/* Directories Card */}
+              <Card className="col-span-3">
+                <CardHeader>
+                  <CardTitle>Directories</CardTitle>
+                  <CardDescription>Active submission targets</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Total</span>
+                    </div>
+                    <span className="text-2xl font-bold">
+                      {stats.total_directories}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium">Active</span>
+                    </div>
+                    <Badge variant="success" className="text-lg px-3 py-1">
+                      {stats.active_directories}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </div>
-        </div>
+
+            {/* Bottom Row */}
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Submissions Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Submissions Breakdown</CardTitle>
+                  <CardDescription>
+                    Distribution by status
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {chartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={chartData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) =>
+                            `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
+                          }
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {chartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
+                      <Database className="h-12 w-12 mb-2 text-muted" />
+                      <p>No submissions yet</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recent Submissions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Submissions</CardTitle>
+                  <CardDescription>Latest 5 submissions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {recentSubmissions.slice(0, 5).map((submission) => (
+                      <div
+                        key={submission.id}
+                        className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <StatusIcon status={submission.status} />
+                          <div>
+                            <p className="text-sm font-medium">
+                              {submission.directory.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {format(
+                                new Date(submission.created_at),
+                                "MMM dd, yyyy"
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant={getStatusVariant(submission.status)}>
+                          {submission.status}
+                        </Badge>
+                      </div>
+                    ))}
+                    {recentSubmissions.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                        <Database className="h-12 w-12 mb-2" />
+                        <p className="text-sm">No submissions yet</p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Advanced Analytics</CardTitle>
+                <CardDescription>
+                  Detailed insights and trends
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                  <Activity className="h-16 w-16 mb-4" />
+                  <p className="text-lg font-medium">Coming Soon</p>
+                  <p className="text-sm">
+                    Advanced analytics features will be available here
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
@@ -282,19 +366,21 @@ const StatusIcon: React.FC<{ status: SubmissionStatus }> = ({ status }) => {
   }
 };
 
-const getStatusColor = (status: SubmissionStatus): string => {
+const getStatusVariant = (
+  status: SubmissionStatus
+): "success" | "warning" | "destructive" | "info" | "default" => {
   switch (status) {
     case "approved":
-      return "bg-green-100 text-green-800";
+      return "success";
     case "submitted":
-      return "bg-blue-100 text-blue-800";
+      return "info";
     case "pending":
-      return "bg-yellow-100 text-yellow-800";
+      return "warning";
     case "failed":
     case "rejected":
-      return "bg-red-100 text-red-800";
+      return "destructive";
     default:
-      return "bg-gray-100 text-gray-800";
+      return "default";
   }
 };
 

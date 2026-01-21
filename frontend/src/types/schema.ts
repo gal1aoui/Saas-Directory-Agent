@@ -7,12 +7,60 @@ export const SubmissionStatusEnum = z.enum([
   "approved",
   "rejected",
   "failed",
+  "all"
 ]);
 
-export const DirectoryStatusEnum = z.enum(["active", "inactive", "testing"]);
+export const DirectoryStatusEnum = z.enum(["active", "inactive", "testing", "all"]);
 
 export type SubmissionStatus = z.infer<typeof SubmissionStatusEnum>;
 export type DirectoryStatus = z.infer<typeof DirectoryStatusEnum>;
+
+// User Schemas
+export const UserSchema = z.object({
+  id: z.number(),
+  email: z.email("Invalid email address"),
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .max(100, "Username must be less than 100 characters"),
+  is_active: z.boolean().optional(),
+  created_at: z.coerce.date().optional(),
+  updated_at: z.coerce.date().optional(),
+});
+
+export const UserCreateSchema = z.object({
+  email: z.email("Invalid email address"),
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .max(100, "Username must be less than 100 characters")
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      "Username can only contain letters, numbers, underscores, and hyphens"
+    ),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(100, "Password is too long")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
+});
+
+export const UserLoginSchema = z.object({
+  email: z.email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
+});
+
+export const TokenSchema = z.object({
+  access_token: z.string(),
+  token_type: z.string().default("bearer"),
+});
+
+export type User = z.infer<typeof UserSchema>;
+export type UserCreate = z.infer<typeof UserCreateSchema>;
+export type UserLogin = z.infer<typeof UserLoginSchema>;
+export type Token = z.infer<typeof TokenSchema>;
 
 // SaaS Product Schemas
 export const SaasProductSchema = z.object({
@@ -78,8 +126,9 @@ export const DirectorySchema = z.object({
   login_url: z.string().optional().nullable(),
   login_username: z.string().optional().nullable(),
   login_password: z.string().optional().nullable(),
-  is_multi_step: z.boolean().optional(),
-  step_count: z.number().int().optional(),
+  requires_url_first: z.boolean().optional(),
+  url_field_selector: z.string().optional().nullable(),
+  url_submit_selector: z.string().optional().nullable(),
   domain_authority: z.number().int().min(0).max(100).optional().nullable(),
   category: z.string().optional().nullable(),
   requires_approval: z.boolean(),
@@ -93,7 +142,7 @@ export const DirectorySchema = z.object({
 });
 
 export const DirectoryCreateSchema = z.object({
-  name: z.string().min(1, "Name is required").max(255),
+  name: z.string().min(1, "Name is required").max(255, "Name is too long"),
   url: z.url("Must be a valid URL"),
   submission_url: z.url("Must be a valid URL").optional(),
   status: DirectoryStatusEnum.optional(),
@@ -101,9 +150,15 @@ export const DirectoryCreateSchema = z.object({
   login_url: z.string().optional(),
   login_username: z.string().optional(),
   login_password: z.string().optional(),
-  is_multi_step: z.boolean().optional(),
-  step_count: z.number().int().optional(),
-  domain_authority: z.number().int().min(0).max(100).optional(),
+  requires_url_first: z.boolean().optional(),
+  url_field_selector: z.string().optional(),
+  url_submit_selector: z.string().optional(),
+  domain_authority: z
+    .number()
+    .int()
+    .min(0, "Domain authority must be at least 0")
+    .max(100, "Domain authority cannot exceed 100")
+    .optional(),
   category: z.string().optional(),
   requires_approval: z.boolean().optional(),
   estimated_approval_time: z.string().optional(),

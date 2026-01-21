@@ -19,6 +19,10 @@ import {
   SubmissionSchema,
   type SubmissionWithDetails,
   SubmissionWithDetailsSchema,
+  type User,
+  type UserCreate,
+  type UserLogin,
+  UserSchema,
 } from "../types/schema";
 
 const API_BASE_URL =
@@ -26,6 +30,7 @@ const API_BASE_URL =
 
 class ApiService {
   private client: AxiosInstance;
+  private accessToken: string | null = null;
 
   constructor() {
     this.client = axios.create({
@@ -34,12 +39,72 @@ class ApiService {
         "Content-Type": "application/json",
       },
       timeout: 30000,
+      withCredentials: true, // Enable sending cookies as fallback
     });
 
-    // Response interceptor for error handling
+    // Load tokens from localStorage on init
+    this.loadTokens();
+
+    // Request interceptor to add access token and log requests
+    this.client.interceptors.request.use(
+      (config) => {
+        console.log(`📤 ${config.method?.toUpperCase()} ${config.url}`);
+        
+        // Add access token from header if available
+        if (this.accessToken) {
+          config.headers.Authorization = `Bearer ${this.accessToken}`;
+          console.log("🔑 Authorization header set");
+        }
+        
+        console.log("🍪 Outgoing cookies:", document.cookie);
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    // Response interceptor for error handling and token refresh
     this.client.interceptors.response.use(
       (response) => response,
-      (error) => {
+      async (error) => {
+        const originalRequest = error.config;
+
+        // If 401 and not already retried, attempt token refresh
+        if (
+          error.response?.status === 401 &&
+          !originalRequest._retry &&
+          !originalRequest.url?.includes("/auth/")
+        ) {
+          originalRequest._retry = true;
+
+          try {
+            console.log("🔄 Attempting to refresh token...");
+            
+            // Call refresh endpoint
+            const refreshResponse = await this.client.post("/auth/refresh", {});
+            console.log("✅ Token refreshed successfully");
+            
+            // Update stored token if returned in response
+            if (refreshResponse.data.access_token) {
+              this.setAccessToken(refreshResponse.data.access_token);
+            }
+            
+            // Add new token to original request
+            if (this.accessToken) {
+              originalRequest.headers.Authorization = `Bearer ${this.accessToken}`;
+            }
+            
+            // Retry the original request with the new token
+            return this.client(originalRequest);
+          } catch (refreshError: any) {
+            console.error("❌ Token refresh failed:", refreshError?.response?.data || refreshError?.message);
+            // Refresh failed, redirect to login will be handled by AuthContext
+            throw {
+              detail: "Session expired. Please login again.",
+              status: 401,
+            };
+          }
+        }
+
         if (error.response) {
           console.error("API Error:", error.response.data);
           throw {
@@ -57,9 +122,89 @@ class ApiService {
     );
   }
 
+  // Token management
+  private loadTokens(): void {
+    try {
+      this.accessToken = localStorage.getItem("access_token");
+      if (this.accessToken) {
+        console.log("📦 Tokens loaded from localStorage");
+      }
+    } catch (e) {
+      console.warn("Failed to load tokens from localStorage", e);
+    }
+  }
+
+  private setAccessToken(token: string): void {
+    this.accessToken = token;
+    try {
+      localStorage.setItem("access_token", token);
+    } catch (e) {
+      console.warn("Failed to save access token to localStorage", e);
+    }
+  }
+
+  private setRefreshToken(token: string): void {
+    try {
+      localStorage.setItem("refresh_token", token);
+    } catch (e) {
+      console.warn("Failed to save refresh token to localStorage", e);
+    }
+  }
+
+  clearTokens(): void {
+    this.accessToken = null;
+    try {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+    } catch (e) {
+      console.warn("Failed to clear tokens from localStorage", e);
+    }
+  }
+
   // Validation helper
   private validate<T>(schema: z.ZodSchema<T>, data: unknown): T {
     return schema.parse(data);
+  }
+
+  // Authentication API
+  async register(data: UserCreate): Promise<User> {
+    const response = await this.client.post<{ user: User; access_token?: string; refresh_token?: string }>("/auth/register", data);
+    return this.validate(UserSchema, response.data.user);
+  }
+
+  async login(data: UserLogin): Promise<User> {
+    const response = await this.client.post<{ user: User; access_token?: string; refresh_token?: string }>("/auth/login", data);
+    
+    // Store tokens if provided in response
+    if (response.data.access_token) {
+      this.setAccessToken(response.data.access_token);
+    }
+    if (response.data.refresh_token) {
+      this.setRefreshToken(response.data.refresh_token);
+    }
+    
+    console.log("✅ Login successful, tokens stored");
+    return this.validate(UserSchema, response.data.user);
+  }
+
+  async logout(): Promise<void> {
+    try {
+      await this.client.post("/auth/logout");
+    } finally {
+      this.clearTokens();
+    }
+  }
+
+  async getCurrentUser(): Promise<User> {
+    const response = await this.client.get<User>("/auth/me");
+    return this.validate(UserSchema, response.data);
+  }
+
+  async refreshAccessToken(): Promise<void> {
+    const response = await this.client.post("/auth/refresh");
+    if (response.data.access_token) {
+      this.setAccessToken(response.data.access_token);
+    }
   }
 
   // SaaS Products API
@@ -93,7 +238,7 @@ class ApiService {
   // Directories API
   async getDirectories(filters?: DirectoryFilters): Promise<Directory[]> {
     const response = await this.client.get<Directory[]>("/directories", {
-      params: filters,
+      params: filters?.status === "all" ? {status: undefined, skilp: filters.skip, limit: filters.limit} : filters,
     });
     return response.data;
   }
@@ -127,7 +272,14 @@ class ApiService {
     const response = await this.client.get<SubmissionWithDetails[]>(
       "/submissions",
       {
-        params: filters,
+        params: filters?.status === "all" ? {
+            status: undefined,
+            saas_product_id: filters.saas_product_id,
+            directory_id: filters.directory_id,
+            skip: filters.skip,
+            limit: filters.limit,
+            search: filters.search
+        } : filters
       },
     );
     console.log("data: ",response.data);

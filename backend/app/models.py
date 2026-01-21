@@ -31,10 +31,32 @@ class DirectoryStatus(str, enum.Enum):
     TESTING = "testing"
 
 
+class User(Base):
+    """User model for authentication and resource ownership"""
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    username = Column(String(100), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    # Relationships
+    saas_products = relationship(
+        "SaasProduct", back_populates="user", cascade="all, delete-orphan"
+    )
+    directories = relationship("Directory", back_populates="user", cascade="all, delete-orphan")
+    submissions = relationship("Submission", back_populates="user", cascade="all, delete-orphan")
+
+
 class SaasProduct(Base):
     __tablename__ = "saas_products"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     website_url = Column(String(500), nullable=False)
     description = Column(Text, nullable=False)
@@ -52,6 +74,7 @@ class SaasProduct(Base):
     social_links = Column(JSON)  # Twitter, LinkedIn, etc.
 
     # Relationships
+    user = relationship("User", back_populates="saas_products")
     submissions = relationship("Submission", back_populates="saas_product")
 
 
@@ -59,20 +82,23 @@ class Directory(Base):
     __tablename__ = "directories"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
-    url = Column(String(500), nullable=False, unique=True)
+    url = Column(String(500), nullable=False, index=True)
     submission_url = Column(String(500))  # Specific submission page
     status = Column(Enum(DirectoryStatus), default=DirectoryStatus.ACTIVE)
 
-    # Login credentials (encrypted in production)
+    # Login credentials (encrypted)
     requires_login = Column(Boolean, default=False)
     login_url = Column(String(500))
     login_username = Column(String(255))
-    login_password = Column(String(255))
+    _login_password = Column("login_password", String(500))  # Encrypted
 
-    # Multi-step form support
-    is_multi_step = Column(Boolean, default=False)
-    step_count = Column(Integer, default=1)
+    # Two-step URL submission pattern (e.g., SaaSHub)
+    # Step 1: Submit URL on initial page, Step 2: Fill form on redirected page
+    requires_url_first = Column(Boolean, default=False)
+    url_field_selector = Column(String(500))  # Selector for the URL input field
+    url_submit_selector = Column(String(500))  # Selector for the URL submit button
 
     # Metadata
     domain_authority = Column(Integer)  # SEO metric
@@ -92,13 +118,34 @@ class Directory(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Relationships
+    user = relationship("User", back_populates="directories")
     submissions = relationship("Submission", back_populates="directory")
+
+    @property
+    def login_password(self):
+        """Decrypt and return the login password"""
+        if self._login_password:
+            from app.utils.auth import decrypt_credential
+
+            return decrypt_credential(self._login_password)
+        return None
+
+    @login_password.setter
+    def login_password(self, value):
+        """Encrypt and store the login password"""
+        if value:
+            from app.utils.auth import encrypt_credential
+
+            self._login_password = encrypt_credential(value)
+        else:
+            self._login_password = None
 
 
 class Submission(Base):
     __tablename__ = "submissions"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     saas_product_id = Column(Integer, ForeignKey("saas_products.id"), nullable=False)
     directory_id = Column(Integer, ForeignKey("directories.id"), nullable=False)
 
@@ -132,6 +179,7 @@ class Submission(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Relationships
+    user = relationship("User", back_populates="submissions")
     saas_product = relationship("SaasProduct", back_populates="submissions")
     directory = relationship("Directory", back_populates="submissions")
 

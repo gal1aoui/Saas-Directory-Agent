@@ -9,22 +9,24 @@ psycopg2-binary==2.9.9
 alembic==1.13.1
 
 # Validation
-pydantic==2.5.3
+pydantic==2.12.5
 pydantic-settings==2.1.0
 email-validator==2.1.0
 
 # Browser Automation
 playwright==1.57.0
+browser-use==0.1.19  # AI-powered browser automation
 
 # Ollama Client
 ollama==0.6.1
+langchain-ollama==1.0.1
 httpx==0.28.1
 
 # Scheduling
 apscheduler==3.10.4
 
 # Utilities
-python-dotenv==1.0.0
+python-dotenv==1.0.1
 aiofiles==23.2.1
 pillow==10.2.0
 ruff==0.14.13
@@ -33,6 +35,7 @@ mypy==1.19.1
 # Logging
 colorlog==6.8.0
 
-# CORS
+# Authentication & Security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+cryptography==42.0.0

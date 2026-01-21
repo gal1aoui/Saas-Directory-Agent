@@ -81,36 +81,66 @@ class AIFormReader:
         Faster than image analysis.
         """
         try:
-            prompt = f"""Analyze this HTML from {url} and identify form fields for SaaS submission.
+            prompt = f"""You are a form analysis expert. Your task is to analyze HTML and extract form field information for a SaaS product submission form.
 
-HTML (truncated):
+INSTRUCTIONS:
+1. Look for input, textarea, and select elements in the HTML
+2. Identify what type of information each field collects
+3. Create CSS selectors for each field (use id, name, or class attributes)
+4. Determine if fields are required (look for "required" attribute or asterisk *)
+5. Map fields to standardized names
+
+STANDARDIZED FIELD NAMES YOU MUST USE:
+- company_name: Product or company name
+- website_url: Website URL field
+- contact_email: Email address
+- description: Long description or details
+- short_description: Short description, tagline, or pitch
+- category: Category or industry selection
+- logo: Logo or image upload
+- twitter_url: Twitter link
+- linkedin_url: LinkedIn link
+- pricing_model: Pricing information
+
+HTML CONTENT FROM {url}:
 {html_content[:8000]}
 
-Return ONLY valid JSON with this structure:
+OUTPUT FORMAT:
+Return ONLY a valid JSON object (no markdown, no explanations) with this exact structure:
 {{
     "fields": [
         {{
             "field_name": "company_name",
             "field_type": "text",
             "field_label": "Company Name",
-            "selector": "#company-name",
+            "selector": "input[name='company']",
             "is_required": true,
-            "confidence_score": 90
+            "confidence_score": 95
         }}
     ],
     "submit_button_selector": "button[type='submit']"
 }}
 
-Field names to use: company_name, website_url, contact_email, description, short_description, category, logo, twitter_url, linkedin_url, pricing_model"""
+IMPORTANT:
+- confidence_score should be 0-100 based on how sure you are about the mapping
+- field_type can be: text, email, url, textarea, file, select
+- selector must be a valid CSS selector
+- Return empty fields array if no form found
+- Do not include any text before or after the JSON"""
 
             response = self.client.generate(
                 model=self.model,
                 prompt=prompt,
-                options={"temperature": settings.AI_TEMPERATURE, "num_predict": settings.MAX_TOKENS},
+                options={
+                    "temperature": settings.AI_TEMPERATURE,
+                    "num_predict": settings.MAX_TOKENS,
+                    "top_p": 0.9,
+                    "top_k": 40
+                },
             )
 
             result = response["response"]
-            print(f"**************AI Response*************: {result}")
+            logger.info(f"AI Raw Response: {result[:500]}...")
             return self._parse_ai_response(result)
 
         except Exception as e:
@@ -160,29 +190,67 @@ Return ONLY valid JSON:
         return prompt
 
     def _parse_ai_response(self, response: str) -> Dict:
-        """Parse and validate AI response"""
+        """Parse and validate AI response with robust JSON extraction"""
         try:
-            # Extract JSON
-            if "```json" in response:
-                json_str = response.split("```json")[1].split("```")[0]
-            elif "```" in response:
-                json_str = response.split("```")[1].split("```")[0]
-            else:
-                json_str = response
+            # Try multiple JSON extraction methods
+            json_str = response.strip()
 
-            data = json.loads(json_str.strip())
+            # Method 1: Extract from markdown code blocks
+            if "```json" in json_str:
+                json_str = json_str.split("```json")[1].split("```")[0].strip()
+            elif "```" in json_str:
+                json_str = json_str.split("```")[1].split("```")[0].strip()
 
+            # Method 2: Find JSON object boundaries
+            if not json_str.startswith("{"):
+                # Find first { and last }
+                start = json_str.find("{")
+                end = json_str.rfind("}") + 1
+                if start != -1 and end > start:
+                    json_str = json_str[start:end]
+
+            # Method 3: Clean common AI response artifacts
+            json_str = json_str.replace("\n", " ").replace("\r", "")
+
+            # Try to parse
+            data = json.loads(json_str)
+
+            # Validate structure
             if "fields" not in data:
-                data = {"fields": [], "submit_button_selector": None}
+                logger.warning("⚠️ AI response missing 'fields' key, adding empty array")
+                data["fields"] = []
+
+            if "submit_button_selector" not in data:
+                logger.warning("⚠️ AI response missing 'submit_button_selector', setting to None")
+                data["submit_button_selector"] = None
+
+            # Validate each field has required properties
+            valid_fields = []
+            for field in data.get("fields", []):
+                if all(key in field for key in ["field_name", "selector"]):
+                    valid_fields.append(field)
+                else:
+                    logger.warning(f"⚠️ Skipping invalid field: {field}")
+
+            data["fields"] = valid_fields
+            logger.info(f"✅ Successfully parsed {len(valid_fields)} form fields")
 
             return data
 
-        except json.JSONDecodeError:
-            logger.error("❌ Failed to parse AI response")
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ JSON parsing failed: {str(e)}")
+            logger.error(f"Raw response: {response[:500]}...")
             return {
                 "fields": [],
                 "submit_button_selector": None,
-                "additional_notes": "Failed to parse AI response",
+                "additional_notes": f"Failed to parse AI response: {str(e)}",
+            }
+        except Exception as e:
+            logger.error(f"❌ Unexpected error parsing response: {str(e)}")
+            return {
+                "fields": [],
+                "submit_button_selector": None,
+                "additional_notes": f"Error: {str(e)}",
             }
 
     def map_saas_data_to_fields(self, saas_data: Dict, detected_fields: List[Dict]) -> Dict[str, any]:

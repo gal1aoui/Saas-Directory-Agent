@@ -1,8 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Edit, Globe, Plus, Save, Trash2, X } from "lucide-react";
+import { Edit, Globe, Plus, Save, Trash2 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { type SubmitHandler, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
   useCreateDirectory,
   useDeleteDirectory,
@@ -15,13 +15,55 @@ import {
   DirectoryCreateSchema,
   type DirectoryStatus,
 } from "../types/schema";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
 
 const DirectoryManager: React.FC = () => {
-  const [statusFilter, setStatusFilter] = useState<DirectoryStatus | "">("");
+  const [statusFilter, setStatusFilter] = useState<DirectoryStatus>("all");
   const { data: directories = [], isLoading } = useDirectories({
     status: statusFilter || undefined,
   });
   const deleteMutation = useDeleteDirectory();
+  const { toast } = useToast();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDirectory, setEditingDirectory] = useState<Directory | null>(
@@ -34,12 +76,19 @@ const DirectoryManager: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this directory?")) return;
-
     try {
       await deleteMutation.mutateAsync(id);
+      toast({
+        title: "Directory deleted",
+        description: "Directory has been deleted successfully",
+      });
     } catch (error) {
       console.error("Error deleting directory:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete directory",
+        variant: "destructive",
+      });
     }
   };
 
@@ -58,117 +107,108 @@ const DirectoryManager: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Directories</h1>
-            <p className="text-gray-600 mt-2">Manage your directory list</p>
+            <h1 className="text-3xl font-bold tracking-tight">Directories</h1>
+            <p className="text-muted-foreground mt-2">
+              Manage your directory submission targets
+            </p>
           </div>
           <div className="flex gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) =>
-                setStatusFilter(e.target.value as DirectoryStatus | "")
-              }
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="testing">Testing</option>
-            </select>
-            <button
-              type="button"
-              onClick={() => setIsFormOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              <Plus className="h-5 w-5" />
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as DirectoryStatus | "all")}>
+              <SelectTrigger className="w-45">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="testing">Testing</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={() => setIsFormOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
               Add Directory
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* Directories Table */}
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+          <div className="flex items-center justify-center py-12">
+            <div className="flex flex-col items-center gap-2">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
+              <p className="text-sm text-muted-foreground">
+                Loading directories...
+              </p>
+            </div>
           </div>
         ) : directories.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <Globe className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">No directories yet</p>
-            <button
-              type="button"
-              onClick={() => setIsFormOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus className="h-5 w-5" />
-              Add Your First Directory
-            </button>
-          </div>
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <div className="flex flex-col items-center gap-4 text-center">
+                <div className="rounded-full bg-muted p-3">
+                  <Globe className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">No directories yet</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Add your first directory to start submitting
+                  </p>
+                </div>
+                <Button onClick={() => setIsFormOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Your First Directory
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Directory
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      DA
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Submissions
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Success Rate
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Directory</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>DA</TableHead>
+                    <TableHead>Submissions</TableHead>
+                    <TableHead>Success Rate</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {directories.map((directory) => (
-                    <tr key={directory.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
+                    <TableRow key={directory.id}>
+                      <TableCell>
                         <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {directory.name}
-                          </div>
-                          <div className="text-sm text-gray-500 truncate max-w-xs">
+                          <div className="font-medium">{directory.name}</div>
+                          <div className="text-sm text-muted-foreground truncate max-w-xs">
                             {directory.url}
                           </div>
                           {directory.category && (
-                            <span className="inline-block mt-1 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                            <Badge variant="info" className="mt-1">
                               {directory.category}
-                            </span>
+                            </Badge>
                           )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(directory.status)}`}
-                        >
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusVariant(directory.status)}>
                           {directory.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
                         {directory.domain_authority || "-"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {directory.total_submissions}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      </TableCell>
+                      <TableCell>{directory.total_submissions}</TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="flex-1">
-                            <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="flex-1 w-24">
+                            <div className="w-full bg-muted rounded-full h-2">
                               <div
                                 className={`h-2 rounded-full ${
                                   getSuccessRate(directory) >= 70
@@ -183,63 +223,61 @@ const DirectoryManager: React.FC = () => {
                               />
                             </div>
                           </div>
-                          <span className="text-sm text-gray-700 min-w-12">
+                          <span className="text-sm text-muted-foreground min-w-12">
                             {getSuccessRate(directory).toFixed(0)}%
                           </span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleEdit(directory)}
-                            className="text-blue-600 hover:text-blue-900"
-                            title="Edit"
                           >
                             <Edit className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleDelete(directory.id)}
                             disabled={deleteMutation.isPending}
-                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                            title="Delete"
                           >
                             <Trash2 className="h-4 w-4" />
-                          </button>
+                          </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         )}
 
-        {/* Form Modal */}
-        {isFormOpen && (
+        {/* Form Dialog */}
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DirectoryForm
             directory={editingDirectory}
             onClose={handleCloseForm}
             onSuccess={handleSuccess}
           />
-        )}
+        </Dialog>
       </div>
     </div>
   );
 };
 
-const getStatusBadgeColor = (status: DirectoryStatus): string => {
+const getStatusVariant = (
+  status: DirectoryStatus
+): "success" | "warning" | "default" => {
   switch (status) {
     case "active":
-      return "bg-green-100 text-green-800";
-    case "inactive":
-      return "bg-gray-100 text-gray-800";
+      return "success";
     case "testing":
-      return "bg-yellow-100 text-yellow-800";
+      return "warning";
     default:
-      return "bg-gray-100 text-gray-800";
+      return "default";
   }
 };
 
@@ -255,16 +293,12 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({
   onSuccess,
 }) => {
   const isEditing = !!directory;
+  const { toast } = useToast();
 
   const createMutation = useCreateDirectory();
   const updateMutation = useUpdateDirectory();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    watch,
-  } = useForm<DirectoryCreate>({
+  const form = useForm<DirectoryCreate>({
     resolver: zodResolver(DirectoryCreateSchema),
     defaultValues: directory
       ? {
@@ -281,301 +315,312 @@ const DirectoryForm: React.FC<DirectoryFormProps> = ({
           login_url: directory.login_url || undefined,
           login_username: directory.login_username || undefined,
           login_password: directory.login_password || undefined,
-          is_multi_step: directory.is_multi_step || false,
-          step_count: directory.step_count || 1,
         }
       : {
+          name: "",
+          url: "",
           status: "active",
           requires_approval: true,
           requires_login: false,
-          is_multi_step: false,
-          step_count: 1,
         },
   });
 
-  const requiresLogin = watch("requires_login");
-  const isMultiStep = watch("is_multi_step");
+  const requiresLogin = form.watch("requires_login");
 
-  const onSubmit: SubmitHandler<DirectoryCreate> = async (data) => {
+  const onSubmit = async (data: DirectoryCreate) => {
     try {
       if (isEditing) {
         await updateMutation.mutateAsync({ id: directory.id, data });
+        toast({
+          title: "Directory updated",
+          description: "Directory has been updated successfully",
+        });
       } else {
         await createMutation.mutateAsync(data);
+        toast({
+          title: "Directory created",
+          description: "Directory has been created successfully",
+        });
       }
       onSuccess();
     } catch (error: any) {
-      console.log(error);
-      alert(error.detail || "Failed to save directory");
+      toast({
+        title: "Error",
+        description: error.detail || "Failed to save directory",
+        variant: "destructive",
+      });
     }
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="fixed inset-0 bg-white/30 backdrop-blur-sm bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
-              {isEditing ? "Edit" : "Add"} Directory
-            </h2>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X className="h-6 w-6" />
-            </button>
+    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>
+          {isEditing ? "Edit" : "Add"} Directory
+        </DialogTitle>
+        <DialogDescription>
+          {isEditing
+            ? "Update directory information and settings"
+            : "Add a new directory to submit your SaaS products"}
+        </DialogDescription>
+      </DialogHeader>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Directory Name *</FormLabel>
+                <FormControl>
+                  <Input placeholder="Product Hunt" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="url"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Directory URL *</FormLabel>
+                <FormControl>
+                  <Input
+                    type="url"
+                    placeholder="https://www.producthunt.com"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="submission_url"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Submission URL</FormLabel>
+                <FormControl>
+                  <Input
+                    type="url"
+                    placeholder="https://www.producthunt.com/posts/new"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Leave empty to use main URL
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status *</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="testing">Testing</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="domain_authority"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Domain Authority (0-100)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="85"
+                      {...field}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value ? Number(e.target.value) : undefined
+                        )
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Directory Name *
-              </label>
-              <input
-                {...register("name")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Product Hunt"
-              />
-              {errors.name && (
-                <p className="text-red-600 text-sm mt-1">
-                  {errors.name.message}
-                </p>
-              )}
-            </div>
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <FormControl>
+                  <Input placeholder="Tech Discovery" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            {/* URL */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Directory URL *
-              </label>
-              <input
-                {...register("url")}
-                type="url"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="https://www.producthunt.com"
-              />
-              {errors.url && (
-                <p className="text-red-600 text-sm mt-1">
-                  {errors.url.message}
-                </p>
-              )}
-            </div>
+          <FormField
+            control={form.control}
+            name="requires_approval"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>Requires Manual Approval</FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
 
-            {/* Submission URL */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Submission URL
-              </label>
-              <input
-                {...register("submission_url")}
-                type="url"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="https://www.producthunt.com/posts/new"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Leave empty to use main URL
-              </p>
-            </div>
+          <FormField
+            control={form.control}
+            name="estimated_approval_time"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Estimated Approval Time</FormLabel>
+                <FormControl>
+                  <Input placeholder="24 hours" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status *
-                </label>
-                <select
-                  {...register("status")}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="testing">Testing</option>
-                </select>
-              </div>
+          {/* Login Section */}
+          <div className="border-t pt-4 mt-4 space-y-4">
+            <h3 className="text-sm font-semibold">Login Settings</h3>
 
-              {/* Domain Authority */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Domain Authority (0-100)
-                </label>
-                <input
-                  {...register("domain_authority", { valueAsNumber: true })}
-                  type="number"
-                  min="0"
-                  max="100"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="85"
-                />
-              </div>
-            </div>
-
-            {/* Category */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <input
-                {...register("category")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Tech Discovery"
-              />
-            </div>
-
-            {/* Requires Approval */}
-            <div className="flex items-center gap-2">
-              <input
-                {...register("requires_approval")}
-                type="checkbox"
-                id="requires_approval"
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="requires_approval"
-                className="text-sm font-medium text-gray-700"
-              >
-                Requires Manual Approval
-              </label>
-            </div>
-
-            {/* Estimated Approval Time */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Estimated Approval Time
-              </label>
-              <input
-                {...register("estimated_approval_time")}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="24 hours"
-              />
-            </div>
-
-            {/* Login Section */}
-            <div className="border-t pt-4 mt-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                Login Settings
-              </h3>
-
-              <div className="flex items-center gap-2 mb-4">
-                <input
-                  {...register("requires_login")}
-                  type="checkbox"
-                  id="requires_login"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label
-                  htmlFor="requires_login"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Requires Login
-                </label>
-              </div>
-
-              {requiresLogin && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Login URL
-                    </label>
-                    <input
-                      {...register("login_url")}
-                      type="url"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="https://example.com/login"
+            <FormField
+              control={form.control}
+              name="requires_login"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
                     />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Requires Login</FormLabel>
+                    <FormDescription>
+                      Enable if directory requires authentication
+                    </FormDescription>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4 mt-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Username
-                      </label>
-                      <input
-                        {...register("login_username")}
-                        type="text"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="username"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Password
-                      </label>
-                      <input
-                        {...register("login_password")}
-                        type="password"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="password"
-                      />
-                    </div>
-                  </div>
-                </>
+                </FormItem>
               )}
-            </div>
+            />
 
-            {/* Multi-Step Form Section */}
-            <div className="border-t pt-4 mt-4">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                Form Settings
-              </h3>
-
-              <div className="flex items-center gap-2 mb-4">
-                <input
-                  {...register("is_multi_step")}
-                  type="checkbox"
-                  id="is_multi_step"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            {requiresLogin && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="login_url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Login URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="url"
+                          placeholder="https://example.com/login"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                <label
-                  htmlFor="is_multi_step"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Multi-Step Form
-                </label>
-              </div>
 
-              {isMultiStep && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Number of Steps
-                  </label>
-                  <input
-                    {...register("step_count", { valueAsNumber: true })}
-                    type="number"
-                    min="2"
-                    max="10"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="2"
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="login_username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input placeholder="username" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="login_password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="password"
+                            placeholder="password"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
-              )}
-            </div>
+              </>
+            )}
+          </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-2 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isPending}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                <Save className="h-4 w-4" />
-                {isPending ? "Saving..." : isEditing ? "Update" : "Create"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending}>
+              <Save className="h-4 w-4 mr-2" />
+              {isPending ? "Saving..." : isEditing ? "Update" : "Create"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </DialogContent>
   );
 };
 

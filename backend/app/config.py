@@ -10,13 +10,21 @@ class Settings(BaseSettings):
 
     # Ollama Configuration (Local AI)
     OLLAMA_HOST: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "mistral:latest"  # Fast, efficient model for form understanding
+    OLLAMA_MODEL: str = "qwen2.5vl:latest"
 
     # Application
     APP_NAME: str = "SaaS Directory Agent"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
-    SECRET_KEY: str 
+
+    # Authentication
+    SECRET_KEY: str = "PL3T6_LW0ElW268NtP0NOazCMTPGRhXVp_rQGQNXgrs="
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+
+    # Encryption for directory credentials
+    ENCRYPTION_KEY: str = ""  # Generate with: from cryptography.fernet import Fernet; Fernet.generate_key()
 
     # CORS - Single origin
     ALLOWED_ORIGINS: str = "http://localhost:5173"
@@ -24,6 +32,7 @@ class Settings(BaseSettings):
     # Browser Automation
     HEADLESS_BROWSER: bool = True
     BROWSER_TIMEOUT: int = 30000
+    USE_BROWSER_USE: bool = True  # Use Browser Use library for AI-powered automation
 
     # AI Settings
     AI_TEMPERATURE: float = 0.1

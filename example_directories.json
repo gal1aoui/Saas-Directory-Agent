@@ -37,7 +37,10 @@
     "domain_authority": 58,
     "category": "SaaS Directory",
     "requires_approval": true,
-    "estimated_approval_time": "1 week"
+    "estimated_approval_time": "1 week",
+    "requires_url_first": true,
+    "url_field_selector": "input#service_url",
+    "url_submit_selector": "input[type='submit'][value='Continue']"
   },
   {
     "name": "Capterra",
@@ -122,7 +125,7 @@
   {
     "name": "SaaSworthy",
     "url": "https://www.saasworthy.com",
-    "submission_url": "https://www.saasworthy.com/list-your-product",
+    "submission_url": "https://www.saasworthy.com/offerings",
     "status": "active",
     "domain_authority": 52,
     "category": "SaaS Directory",

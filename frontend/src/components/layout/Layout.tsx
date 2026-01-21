@@ -1,15 +1,42 @@
-import { Database, Globe, LayoutDashboard, Menu, Send, X } from "lucide-react";
+import { Database, Globe, LayoutDashboard, LogOut, Menu, Send, User as UserIcon, X } from "lucide-react";
 import { useState } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import BulkSubmit from "../BulkSubmit";
 import Dashboard from "../Dashboard";
 import DirectoryManager from "../DirectoryManager";
 import SaasManager from "../SaasManager";
 import SubmissionList from "../SubmissionList";
 import { NavLink } from "./NavLink";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
   return (
     <>
       <aside
@@ -47,11 +74,34 @@ export default function Layout() {
             <NavLink to="/directories" icon={Globe} label="Directories" />
           </nav>
 
-          {/* Footer */}
+          {/* Footer with User Menu */}
           <div className="p-4 border-t">
-            <p className="text-xs text-gray-600 text-center">
-              SaaS Directory Agent v1.0
-            </p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start gap-2 px-2"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <UserIcon className="h-4 w-4" />
+                  </div>
+                  <div className="flex flex-col items-start text-sm">
+                    <span className="font-medium">{user?.username}</span>
+                    <span className="text-xs text-muted-foreground truncate max-w-[160px]">
+                      {user?.email}
+                    </span>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </aside>

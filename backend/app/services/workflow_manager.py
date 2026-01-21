@@ -9,6 +9,7 @@ from app.config import get_settings
 from app.models import Directory, SaasProduct, Submission, SubmissionStatus
 from app.services.ai_form_reader import AIFormReader
 from app.services.browser_automation import BrowserAutomation
+from app.services.browser_use_service import BrowserUseService
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -25,8 +26,10 @@ class WorkflowManager:
         self.scheduler = AsyncIOScheduler()
         self.is_running = False
 
-    async def submit_to_directory(self, saas_product_id: int, directory_id: int) -> Submission:
-        """Execute single submission with login and multi-step support."""
+    async def submit_to_directory(
+        self, saas_product_id: int, directory_id: int, user_id: int
+    ) -> Submission:
+        """Execute single submission with Browser Use AI or traditional automation."""
         # Get SaaS product and directory
         saas_product = self.db.query(SaasProduct).filter(SaasProduct.id == saas_product_id).first()
 
@@ -37,6 +40,7 @@ class WorkflowManager:
 
         # Create submission record
         submission = Submission(
+            user_id=user_id,
             saas_product_id=saas_product_id,
             directory_id=directory_id,
             status=SubmissionStatus.PENDING,
@@ -44,6 +48,97 @@ class WorkflowManager:
         self.db.add(submission)
         self.db.commit()
         self.db.refresh(submission)
+
+        try:
+            # Choose automation method: Browser Use AI or Traditional Playwright
+            if settings.USE_BROWSER_USE:
+                return await self._submit_with_browser_use(
+                    submission, saas_product, directory
+                )
+            else:
+                return await self._submit_with_playwright(
+                    submission, saas_product, directory
+                )
+        except Exception as e:
+            logger.error(f"Submission failed: {str(e)}")
+            submission.status = SubmissionStatus.FAILED
+            submission.response_message = f"Error: {str(e)}"
+            self.db.commit()
+            raise
+
+    async def _submit_with_browser_use(
+        self, submission: Submission, saas_product: SaasProduct, directory: Directory
+    ) -> Submission:
+        """
+        Submit using Browser Use AI-powered automation.
+
+        This method uses Qwen2.5-VL vision model to intelligently:
+        - Detect and fill forms automatically
+        - Handle multi-step forms without manual configuration
+        - Perform login if required
+        - Handle special submission patterns
+        """
+        logger.info(f"🤖 Using Browser Use AI for {directory.name}")
+
+        browser_use = BrowserUseService()
+
+        # Prepare form data from SaaS product
+        form_data = self._saas_product_to_dict(saas_product)
+
+        # Prepare login credentials if required
+        login_credentials = None
+        if directory.requires_login:
+            login_credentials = {
+                "username": directory.login_username,
+                "password": directory.login_password,
+                "login_url": directory.login_url,
+            }
+
+        # Prepare URL-first selectors if needed
+        url_first_selectors = None
+        if directory.requires_url_first:
+            url_first_selectors = {
+                "url_field_selector": directory.url_field_selector,
+                "url_submit_selector": directory.url_submit_selector,
+            }
+
+        # AI agent performs the submission
+        result = await browser_use.submit_to_directory(
+            url=directory.submission_url or directory.url,
+            form_data=form_data,
+            login_credentials=login_credentials,
+            requires_url_first=directory.requires_url_first,
+            url_first_selectors=url_first_selectors,
+        )
+
+        # Update submission based on result
+        if result["success"]:
+            submission.status = SubmissionStatus.SUBMITTED
+            submission.submitted_at = datetime.now()
+            submission.response_message = result["message"]
+            submission.form_screenshot_url = result.get("screenshot_path")
+
+            directory.total_submissions += 1
+            directory.successful_submissions += 1
+
+            logger.info(f"✅ AI submission {submission.id} to {directory.name} successful")
+        else:
+            submission.status = SubmissionStatus.FAILED
+            submission.response_message = result["message"]
+            submission.form_screenshot_url = result.get("screenshot_path")
+
+            directory.total_submissions += 1
+
+            logger.error(f"❌ AI submission {submission.id} failed: {result['message']}")
+
+        self.db.commit()
+        return submission
+
+    async def _submit_with_playwright(
+        self, submission: Submission, saas_product: SaasProduct, directory: Directory
+    ) -> Submission:
+        """Traditional Playwright automation (fallback method)."""
+        logger.info(f"🔧 Using traditional Playwright for {directory.name}")
 
         try:
             # Use persistent browser context
@@ -61,12 +156,26 @@ class WorkflowManager:
 
                     logger.info(f"✅ Logged in to {directory.name}")
 
+                # Step 1.5: Handle URL-first submission pattern (e.g., SaaSHub)
+                actual_form_url = directory.submission_url or directory.url
+                if directory.requires_url_first:
+                    logger.info(f"Submitting URL first to {directory.name}")
+                    actual_form_url = await browser.submit_url_first_step(
+                        initial_url=directory.submission_url or directory.url,
+                        website_url=saas_product.website_url,
+                        url_field_selector=directory.url_field_selector,
+                        url_submit_selector=directory.url_submit_selector,
+                    )
+                    logger.info(f"✅ URL submitted, form page: {actual_form_url}")
+
                 # Step 2: Check cached form structure
                 if directory.detected_form_structure:
                     form_structure = directory.detected_form_structure
                 else:
                     # Analyze form
-                    form_structure = await self._analyze_directory_form(browser, directory)
+                    form_structure = await self._analyze_directory_form(
+                        browser, directory, actual_form_url
+                    )
 
                     # Cache it
                     directory.detected_form_structure = form_structure
@@ -86,7 +195,7 @@ class WorkflowManager:
 
                 # Step 4: Fill and submit form (with multi-step support)
                 submission_result = await browser.fill_and_submit_form(
-                    url=directory.submission_url or directory.url,
+                    url=actual_form_url,
                     field_mapping=field_mapping,
                     submit_button_selector=form_structure.get("submit_button_selector"),
                     is_multi_step=directory.is_multi_step,
@@ -141,15 +250,17 @@ class WorkflowManager:
 
             return submission
 
-    async def bulk_submit(self, saas_product_id: int, directory_ids: List[int]) -> List[Submission]:
-        """Submit to multiple directories concurrently with persistent browser sessions.."""
+    async def bulk_submit(
+        self, saas_product_id: int, directory_ids: List[int], user_id: int
+    ) -> List[Submission]:
+        """Submit to multiple directories concurrently with persistent browser sessions."""
         submissions = []
         semaphore = asyncio.Semaphore(self.settings.CONCURRENT_SUBMISSIONS)
 
         async def submit_with_semaphore(directory_id: int):
             async with semaphore:
                 try:
-                    return await self.submit_to_directory(saas_product_id, directory_id)
+                    return await self.submit_to_directory(saas_product_id, directory_id, user_id)
                 except Exception as e:
                     logger.error(f"❌ Error submitting to directory {directory_id}: {e}")
                     return None
@@ -189,30 +300,18 @@ class WorkflowManager:
             except Exception as e:
                 logger.error(f"❌ Retry failed for submission {submission.id}: {e}")
 
-    async def _analyze_directory_form(self, browser: BrowserAutomation, directory: Directory) -> Dict:
+    async def _analyze_directory_form(
+        self, browser: BrowserAutomation, directory: Directory, form_url: str = None
+    ) -> Dict:
         """Analyze directory form structure using existing browser context"""
-        screenshot_path, html_content = await browser.navigate_and_screenshot(
-            directory.submission_url or directory.url
-        )
+        url = form_url or directory.submission_url or directory.url
+        screenshot_path, html_content = await browser.navigate_and_screenshot(url)
 
         form_structure = await self.ai_reader.analyze_form_from_screenshot(
             screenshot_path=screenshot_path, html_content=html_content
         )
 
         return form_structure
-
-    async def _analyze_directory_form(self, directory: Directory) -> Dict:
-        """Analyze directory form structure using AI"""
-        async with BrowserAutomation() as browser:
-            screenshot_path, html_content = await browser.navigate_and_screenshot(
-                directory.submission_url or directory.url
-            )
-
-            form_structure = await self.ai_reader.analyze_form_from_screenshot(
-                screenshot_path=screenshot_path, html_content=html_content
-            )
-
-            return form_structure
 
     def _saas_product_to_dict(self, saas_product: SaasProduct) -> Dict:
         """Convert SaaS product to dict"""
