@@ -56,10 +56,10 @@ async def get_current_user(request: Request, db: Annotated[Session, Depends(get_
         if user_id is None:
             raise credentials_exception
 
-    except JWTError:
-        raise credentials_exception
-    except ValueError:
-        raise credentials_exception
+    except JWTError as e:
+        raise credentials_exception from e
+    except ValueError as e:
+        raise credentials_exception from e
 
     # Get user from database
     user = db.query(User).filter(User.id == user_id).first()

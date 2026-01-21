@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import type React from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { api } from "@/services/api";
 import type { User, UserCreate, UserLogin } from "@/types/schema";
 
@@ -19,20 +20,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is authenticated on mount
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
   const checkAuth = async () => {
     try {
       // First check if we have stored tokens
       const hasStoredTokens = localStorage.getItem("access_token") !== null;
-      
+
       if (hasStoredTokens) {
         console.log("📦 Found stored tokens, fetching user info...");
       }
-      
+
       const currentUser = await api.getCurrentUser();
       setUser(currentUser);
       console.log("✅ User authenticated:", currentUser.email);
@@ -44,6 +40,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsLoading(false);
     }
   };
+
+  // Check if user is authenticated on mount
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
   const login = async (credentials: UserLogin) => {
     setIsLoading(true);

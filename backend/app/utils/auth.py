@@ -131,7 +131,7 @@ def verify_token(token: str, token_type: str = "access") -> Dict[str, Any]:
 
         return payload
     except JWTError as e:
-        raise JWTError(f"Token verification failed: {str(e)}")
+        raise JWTError(f"Token verification failed: {str(e)}") from e
 
 
 # Credential Encryption Functions

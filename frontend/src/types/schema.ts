@@ -7,10 +7,15 @@ export const SubmissionStatusEnum = z.enum([
   "approved",
   "rejected",
   "failed",
-  "all"
+  "all",
 ]);
 
-export const DirectoryStatusEnum = z.enum(["active", "inactive", "testing", "all"]);
+export const DirectoryStatusEnum = z.enum([
+  "active",
+  "inactive",
+  "testing",
+  "all",
+]);
 
 export type SubmissionStatus = z.infer<typeof SubmissionStatusEnum>;
 export type DirectoryStatus = z.infer<typeof DirectoryStatusEnum>;
@@ -36,7 +41,7 @@ export const UserCreateSchema = z.object({
     .max(100, "Username must be less than 100 characters")
     .regex(
       /^[a-zA-Z0-9_-]+$/,
-      "Username can only contain letters, numbers, underscores, and hyphens"
+      "Username can only contain letters, numbers, underscores, and hyphens",
     ),
   password: z
     .string()

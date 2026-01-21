@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Database initialization failed: {e}")
         raise
 
-    logger.info(f"🔐 Authentication: JWT with httpOnly cookies")
+    logger.info("🔐 Authentication: JWT with httpOnly cookies")
     logger.info(f"🤖 AI: Ollama ({settings.OLLAMA_MODEL})")
     logger.info(f"🌍 Server: http://{settings.HOST}:{settings.PORT}")
     logger.info("✅ Application started successfully")

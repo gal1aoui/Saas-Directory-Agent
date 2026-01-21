@@ -1,13 +1,20 @@
-import asyncio
-import os
-import sys
-from datetime import datetime
-from typing import Dict, Optional, Tuple
+"""
+Browser automation facade using Playwright.
 
-from playwright.async_api import Browser, Page, BrowserContext, async_playwright
-from playwright.async_api import TimeoutError as PlaywrightTimeoutError
+This is a simplified facade that delegates to specialized modules:
+- BrowserManager: Browser lifecycle
+- LoginHandler: Authentication
+- FormFiller: Form operations
+- URLSubmissionHandler: URL-first submission pattern
+"""
+
+from typing import Any, Dict, Optional
 
 from app.config import get_settings
+from app.services.browser_manager import BrowserManager
+from app.services.form_filler import FormFiller
+from app.services.login_handler import LoginHandler
+from app.services.url_submission import URLSubmissionHandler
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -15,496 +22,74 @@ settings = get_settings()
 
 
 class BrowserAutomation:
-    """Windows-compatible browser automation using Playwright."""
+    """
+    Facade for browser automation using specialized modules.
+
+    Delegates to:
+    - BrowserManager for lifecycle
+    - LoginHandler for authentication
+    - FormFiller for form operations
+    - URLSubmissionHandler for URL-first pattern
+    """
 
     def __init__(self):
-        self.playwright = None
-        self.browser: Optional[Browser] = None
-        self.context: Optional[BrowserContext] = None
+        self.browser_manager = BrowserManager()
         self.settings = settings
-        self._lock = asyncio.Lock()
 
     async def __aenter__(self):
-        await self.initialize()
+        await self.browser_manager.initialize()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.close()
+        await self.browser_manager.close()
 
     async def initialize(self):
-        """Initialize Playwright and browser"""
-        async with self._lock:
-            if self.browser and self.context:
-                return
+        """Initialize browser."""
+        await self.browser_manager.initialize()
 
-            try:
-                self.playwright = await async_playwright().start()
-
-                launch_options = {
-                    "headless": self.settings.HEADLESS_BROWSER,
-                    "args": [
-                        "--no-sandbox",
-                        "--disable-setuid-sandbox",
-                        "--disable-dev-shm-usage",
-                        "--disable-blink-features=AutomationControlled",
-                    ],
-                }
-
-                if sys.platform == "win32":
-                    launch_options["channel"] = "chrome"
-
-                try:
-                    self.browser = await self.playwright.chromium.launch(**launch_options)
-                except Exception:
-                    launch_options.pop("channel", None)
-                    self.browser = await self.playwright.chromium.launch(**launch_options)
-                
-                # Create persistent context (maintains cookies and sessions)
-                self.context = await self.browser.new_context(
-                    viewport={"width": 1920, "height": 1080},
-                    user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    accept_downloads=True,
-                )
-                
-                logger.info("✅ Browser initialized with persistent context")
-                
-            except Exception as e:
-                logger.error(f"❌ Browser initialization failed: {str(e)}")
-                raise RuntimeError(f"Browser initialization failed: {str(e)}")
+    async def close(self):
+        """Close browser."""
+        await self.browser_manager.close()
 
     async def login_if_required(
-        self, 
+        self,
         login_url: Optional[str],
         username: Optional[str],
-        password: Optional[str]
+        password: Optional[str],
     ) -> bool:
-        """Handle login if directory requires authentication"""
-        if not login_url or not username or not password:
-            return True  # No login required
-        
-        page = await self.context.new_page()
-        
-        try:
-            logger.info(f"Logging in to {login_url}")
-            
-            await page.goto(login_url, wait_until="domcontentloaded", timeout=self.settings.BROWSER_TIMEOUT)
-            await page.wait_for_load_state("networkidle", timeout=10000)
-            
-            # Try common login field selectors
-            username_selectors = [
-                'input[type="email"]',
-                'input[name="email"]',
-                'input[name="username"]',
-                'input[id="email"]',
-                'input[id="username"]',
-                '#email', '#username'
-            ]
-            
-            password_selectors = [
-                'input[type="password"]',
-                'input[name="password"]',
-                '#password'
-            ]
-            
-            # Fill username
-            for selector in username_selectors:
-                try:
-                    if await page.locator(selector).count() > 0:
-                        await page.locator(selector).first.fill(username)
-                        break
-                except:
-                    continue
-            
-            # Fill password
-            for selector in password_selectors:
-                try:
-                    if await page.locator(selector).count() > 0:
-                        await page.locator(selector).first.fill(password)
-                        break
-                except:
-                    continue
-            
-            # Click login button
-            login_button_selectors = [
-                'button[type="submit"]',
-                'input[type="submit"]',
-                'button:has-text("Log in")',
-                'button:has-text("Login")',
-                'button:has-text("Sign in")',
-            ]
-            
-            for selector in login_button_selectors:
-                try:
-                    if await page.locator(selector).count() > 0:
-                        await page.locator(selector).first.click()
-                        break
-                except:
-                    continue
-            
-            # Wait for navigation after login
-            await asyncio.sleep(3)
-            
-            logger.info("✅ Login successful")
-            return True
-            
-        except Exception as e:
-            logger.error(f"❌ Login failed: {str(e)}")
-            return False
-        finally:
-            await page.close()
-    
-    async def close(self):
-        """Close browser and playwright"""
-        async with self._lock:
-            try:
-                if self.context:
-                    await self.context.close()
-                    self.context = None
-                if self.browser:
-                    await self.browser.close()
-                    self.browser = None
-                if self.playwright:
-                    await self.playwright.stop()
-                    self.playwright = None
-            except Exception as e:
-                logger.error(f"❌ Error closing browser: {str(e)}")
+        """Handle login if directory requires authentication."""
+        login_handler = LoginHandler(self.browser_manager.context, self.settings.BROWSER_TIMEOUT)
+        return await login_handler.login_if_required(login_url, username, password)
 
-    async def navigate_and_screenshot(self, url: str) -> Tuple[str, str]:
-        """Navigate to URL and take screenshot using persistent context"""
-        if not self.context:
-            await self.initialize()
-        
-        page = await self.context.new_page()
-        
-        try:
-            await page.goto(url, wait_until="domcontentloaded", timeout=self.settings.BROWSER_TIMEOUT)
-            await page.wait_for_load_state("networkidle", timeout=10000)
-            await asyncio.sleep(2)
-            
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            screenshot_dir = os.path.join(self.settings.UPLOAD_DIR, "screenshots")
-            os.makedirs(screenshot_dir, exist_ok=True)
-            
-            screenshot_path = os.path.join(screenshot_dir, f"form_{timestamp}.png")
-            await page.screenshot(path=screenshot_path, full_page=True)
-            
-            html_content = await page.content()
-            
-            return screenshot_path, html_content
-            
-        except PlaywrightTimeoutError:
-            logger.error(f"❌ Timeout navigating to {url}")
-            raise
-        except Exception as e:
-            logger.error(f"❌ Error navigating to {url}: {str(e)}")
-            raise
-        finally:
-            await page.close()
-    
+    async def navigate_and_screenshot(self, url: str) -> tuple[str, str]:
+        """Navigate to URL and take screenshot."""
+        return await self.browser_manager.navigate_and_screenshot(url)
+
     async def fill_and_submit_form(
-        self, 
-        url: str, 
-        field_mapping: Dict[str, any], 
+        self,
+        url: str,
+        field_mapping: Dict[str, Any],
         submit_button_selector: Optional[str] = None,
         is_multi_step: bool = False,
-        step_count: int = 1
+        step_count: int = 1,
     ) -> Dict:
-        """
-        Fill and submit form with support for multi-step forms.
-        Uses persistent context to maintain login session.
-        """
-        if not self.context:
-            await self.initialize()
-        
-        page = await self.context.new_page()
-        
-        result = {
-            "success": False,
-            "message": "",
-            "listing_url": None,
-            "screenshot_path": None
-        }
-        
-        try:
-            await page.goto(url, wait_until="domcontentloaded", timeout=self.settings.BROWSER_TIMEOUT)
-            await page.wait_for_load_state("networkidle", timeout=10000)
-            
-            if is_multi_step:
-                # Handle multi-step form
-                for step in range(1, step_count + 1):
-                    logger.info(f"Processing step {step}/{step_count}")
-                    
-                    # Fill fields for current step
-                    for selector, value in field_mapping.items():
-                        if value:
-                            await self._fill_field(page, selector, value)
-                            await asyncio.sleep(0.3)
-                    
-                    # Click Next or Submit button
-                    if step < step_count:
-                        # Click "Next" button
-                        await self._click_next_button(page)
-                        await asyncio.sleep(2)
-                    else:
-                        # Final step - click "Submit"
-                        if submit_button_selector:
-                            await self._click_submit_button(page, submit_button_selector)
-                        else:
-                            await self._find_and_click_submit(page)
-            else:
-                # Single-step form
-                for selector, value in field_mapping.items():
-                    if value:
-                        await self._fill_field(page, selector, value)
-                        await asyncio.sleep(0.5)
-                
-                # Take screenshot before submit
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                screenshot_dir = os.path.join(self.settings.UPLOAD_DIR, "screenshots")
-                os.makedirs(screenshot_dir, exist_ok=True)
-                
-                pre_submit_screenshot = os.path.join(screenshot_dir, f"pre_submit_{timestamp}.png")
-                await page.screenshot(path=pre_submit_screenshot)
-                result["screenshot_path"] = pre_submit_screenshot
-                
-                # Submit
-                if submit_button_selector:
-                    await self._click_submit_button(page, submit_button_selector)
-                else:
-                    await self._find_and_click_submit(page)
-            
-            # Wait for submission to complete
-            await asyncio.sleep(3)
-            
-            # Check result
-            current_url = page.url
-            page_content = await page.content()
-            
-            success_indicators = [
-                "success", "thank you", "submitted", "received",
-                "confirmation", "pending review", "approved"
-            ]
-            
-            page_text = page_content.lower()
-            is_success = any(indicator in page_text for indicator in success_indicators)
-            
-            if is_success:
-                result["success"] = True
-                result["message"] = "Form submitted successfully"
-                result["listing_url"] = current_url
-                logger.info(f"✅ Successfully submitted to {url}")
-            else:
-                error_indicators = [
-                    "error", "invalid", "failed", "required field",
-                    "please correct", "try again"
-                ]
-                
-                has_error = any(indicator in page_text for indicator in error_indicators)
-                
-                if has_error:
-                    result["message"] = "Submission failed - validation errors"
-                    logger.error(f"❌ Form validation errors at {url}")
-                else:
-                    result["success"] = True
-                    result["message"] = "Form submitted"
-                    result["listing_url"] = current_url
-            
-            return result
-            
-        except PlaywrightTimeoutError:
-            result["message"] = f"Timeout submitting to {url}"
-            logger.error(f"❌ {result['message']}")
-            return result
-        except Exception as e:
-            result["message"] = f"Error: {str(e)}"
-            logger.error(f"❌ {result['message']}")
-            return result
-        finally:
-            await page.close()
-    
-    async def _fill_field(self, page: Page, selector: str, value: any):
-        """Fill a single form field"""
-        try:
-            await page.wait_for_selector(selector, timeout=5000, state="visible")
-            element = page.locator(selector)
-            
-            tag_name = await element.evaluate("el => el.tagName.toLowerCase()")
-            input_type = await element.get_attribute("type") if tag_name == "input" else None
-            
-            if tag_name == "input" and input_type == "file":
-                if os.path.exists(str(value)):
-                    await element.set_input_files(str(value))
-            elif tag_name == "select":
-                await element.select_option(value=str(value))
-            elif tag_name == "textarea":
-                await element.fill(str(value))
-            else:
-                await element.fill(str(value))
-        except Exception:
-            pass
-    
-    async def _click_next_button(self, page: Page):
-        """Click Next button in multi-step forms"""
-        next_selectors = [
-            'button:has-text("Next")',
-            'button:has-text("Continue")',
-            'input[value="Next"]',
-            'input[value="Continue"]',
-            'a:has-text("Next")',
-            '.next-button',
-            '#next',
-        ]
-        
-        for selector in next_selectors:
-            try:
-                if await page.locator(selector).count() > 0:
-                    await page.locator(selector).first.scroll_into_view_if_needed()
-                    await page.locator(selector).first.click()
-                    return
-            except:
-                continue
-        
-        raise Exception("Next button not found")
-    
-    async def _click_submit_button(self, page: Page, selector: str):
-        """Click the submit button"""
-        await page.wait_for_selector(selector, timeout=5000, state="visible")
-        await page.locator(selector).scroll_into_view_if_needed()
-        await page.locator(selector).click()
-    
-    async def _find_and_click_submit(self, page: Page):
-        """Try to find and click submit button"""
-        selectors = [
-            'button[type="submit"]',
-            'input[type="submit"]',
-            'button:has-text("Submit")',
-            'button:has-text("Send")',
-            'button:has-text("Publish")',
-            '.submit-button',
-            '#submit',
-        ]
-
-        for selector in selectors:
-            try:
-                if await page.locator(selector).count() > 0:
-                    await page.locator(selector).first.scroll_into_view_if_needed()
-                    await page.locator(selector).first.click()
-                    return
-            except:
-                continue
-
-        raise Exception("Submit button not found")
+        """Fill and submit form with support for multi-step forms."""
+        form_filler = FormFiller(self.browser_manager.context, self.settings.BROWSER_TIMEOUT)
+        return await form_filler.fill_and_submit_form(
+            url, field_mapping, submit_button_selector, is_multi_step, step_count
+        )
 
     async def submit_url_first_step(
         self,
         initial_url: str,
         website_url: str,
         url_field_selector: Optional[str] = None,
-        url_submit_selector: Optional[str] = None
+        url_submit_selector: Optional[str] = None,
     ) -> str:
-        """
-        Handle two-step submission where URL is submitted first.
-        Returns the URL of the form page after URL submission.
-
-        Example: SaaSHub requires submitting URL on /services/submit,
-        then redirects to /services/new?url=... for the full form.
-        """
-        if not self.context:
-            await self.initialize()
-
-        page = await self.context.new_page()
-
-        try:
-            await page.goto(
-                initial_url, wait_until="domcontentloaded", timeout=self.settings.BROWSER_TIMEOUT
-            )
-            await page.wait_for_load_state("networkidle", timeout=10000)
-            await asyncio.sleep(2)
-
-            # Find and fill URL field
-            url_field_selectors = [
-                url_field_selector,
-                'input[name="url"]',
-                'input[id="url"]',
-                'input[type="url"]',
-                'input[placeholder*="website"]',
-                'input[placeholder*="URL"]',
-                '#service_url',
-                'input[name="website"]',
-            ] if url_field_selector else [
-                'input[name="url"]',
-                'input[id="url"]',
-                'input[type="url"]',
-                'input[placeholder*="website"]',
-                'input[placeholder*="URL"]',
-                '#service_url',
-                'input[name="website"]',
-            ]
-
-            url_filled = False
-            for selector in url_field_selectors:
-                if not selector:
-                    continue
-                try:
-                    if await page.locator(selector).count() > 0:
-                        await page.locator(selector).first.fill(website_url)
-                        url_filled = True
-                        logger.info(f"✅ Filled URL field using selector: {selector}")
-                        break
-                except Exception:
-                    continue
-
-            if not url_filled:
-                raise Exception("Could not find URL input field")
-
-            await asyncio.sleep(0.5)
-
-            # Find and click Continue/Submit button
-            submit_selectors = [
-                url_submit_selector,
-                'button:has-text("Continue")',
-                'input[value="Continue"]',
-                'button[type="submit"]',
-                'input[type="submit"]',
-                'button:has-text("Next")',
-                'button:has-text("Submit")',
-            ] if url_submit_selector else [
-                'button:has-text("Continue")',
-                'input[value="Continue"]',
-                'button[type="submit"]',
-                'input[type="submit"]',
-                'button:has-text("Next")',
-                'button:has-text("Submit")',
-            ]
-
-            button_clicked = False
-            for selector in submit_selectors:
-                if not selector:
-                    continue
-                try:
-                    if await page.locator(selector).count() > 0:
-                        await page.locator(selector).first.scroll_into_view_if_needed()
-                        await page.locator(selector).first.click()
-                        button_clicked = True
-                        logger.info(f"✅ Clicked submit button using selector: {selector}")
-                        break
-                except Exception:
-                    continue
-
-            if not button_clicked:
-                raise Exception("Could not find Continue/Submit button")
-
-            # Wait for navigation to form page
-            await asyncio.sleep(3)
-            await page.wait_for_load_state("networkidle", timeout=10000)
-
-            form_url = page.url
-            logger.info(f"✅ Navigated to form page: {form_url}")
-
-            return form_url
-
-        except Exception as e:
-            logger.error(f"❌ Error in URL submission step: {str(e)}")
-            raise
-        finally:
-            await page.close()
+        """Handle two-step submission where URL is submitted first."""
+        url_handler = URLSubmissionHandler(
+            self.browser_manager.context, self.settings.BROWSER_TIMEOUT
+        )
+        return await url_handler.submit_url_first_step(
+            initial_url, website_url, url_field_selector, url_submit_selector
+        )

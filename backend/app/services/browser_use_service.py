@@ -1,14 +1,17 @@
 """
 Browser Use Integration Service
 
-Provides AI-powered browser automation using the browser-use library with Qwen2.5-VL.
-This service replaces manual Playwright automation with intelligent AI agents.
+Provides AI-powered browser automation.
+Supports both cloud API (default) and local Ollama modes.
+- Cloud: Uses browser-use-sdk for Browser Use Cloud API
+- Local: Uses browser-use library with Ollama LLM
 """
 
 import logging
-from typing import Dict, Optional
+import os
+from typing import Any, Dict, Optional
 
-from langchain_ollama import ChatOllama
+from browser_use_sdk import AsyncBrowserUse
 
 from app.config import get_settings
 
@@ -20,7 +23,11 @@ class BrowserUseService:
     """
     AI-powered browser automation service using Browser Use library.
 
-    Uses Qwen2.5-VL (vision-language model) for:
+    Supports two modes:
+    - Cloud (default): Uses Browser Use Cloud API with built-in vision-language model
+    - Local: Uses Ollama with Qwen2.5-VL vision model
+
+    Both modes handle:
     - Automatic form detection
     - Intelligent field mapping
     - Multi-step form handling
@@ -28,18 +35,42 @@ class BrowserUseService:
     """
 
     def __init__(self):
-        """Initialize Browser Use with Ollama LLM"""
-        self.llm = ChatOllama(
-            model=settings.OLLAMA_MODEL,
-            base_url=settings.OLLAMA_HOST,
-            temperature=settings.AI_TEMPERATURE,
-        )
-        logger.info(f"BrowserUseService initialized with model: {settings.OLLAMA_MODEL}")
+        """Initialize Browser Use in Cloud or Local mode"""
+        self.use_cloud = settings.USE_BROWSER_USE_CLOUD
+        self.api_key = settings.BROWSER_USE_API_KEY
+        self.llm = None
+        self.cloud_client = None
+
+        if self.use_cloud:
+            if not self.api_key:
+                raise ValueError("BROWSER_USE_API_KEY is not set in environment variables")
+            # Set API key in environment for browser-use-sdk
+            os.environ["BROWSER_USE_API_KEY"] = self.api_key
+
+            try:
+                self.cloud_client = AsyncBrowserUse(api_key=self.api_key)
+                logger.info("🌐 BrowserUseService initialized with Browser Use Cloud API")
+            except ImportError:
+                logger.error(
+                    "browser-use-sdk not installed. Install with: pip install browser-use-sdk"
+                )
+                raise
+        else:
+            from langchain_ollama import ChatOllama
+
+            self.llm = ChatOllama(
+                model=settings.OLLAMA_MODEL,
+                base_url=settings.OLLAMA_HOST,
+                temperature=settings.AI_TEMPERATURE,
+            )
+            logger.info(
+                f"💻 BrowserUseService initialized with local Ollama: {settings.OLLAMA_MODEL}"
+            )
 
     async def submit_to_directory(
         self,
         url: str,
-        form_data: Dict[str, any],
+        form_data: Dict[str, Any],
         login_credentials: Optional[Dict[str, str]] = None,
         requires_url_first: bool = False,
         url_first_selectors: Optional[Dict[str, str]] = None,
@@ -88,21 +119,32 @@ NOTE: This is a two-step submission form:
 
 {self._build_task_prompt(form_data)}"""
 
-            # Create and run agent
-            # Browser Use v0.1.19 handles browser internally
-            agent = Agent(
-                task=task_prompt,
-                llm=self.llm,
-            )
+            # Create and run agent (cloud or local)
+            if self.use_cloud:
+                # Cloud mode - use browser-use-sdk
+                task = await self.cloud_client.tasks.create_task(task=task_prompt)
+                result = await task.complete()
+                return {
+                    "success": True,
+                    "message": "Form submitted successfully by Browser Use Cloud",
+                    "screenshot_path": None,
+                    "agent_result": result,
+                }
+            else:
+                # Local mode - use browser-use library with Ollama
+                from browser_use import Agent
 
-            result = await agent.run()
-
-            return {
-                "success": True,
-                "message": "Form submitted successfully by AI agent",
-                "screenshot_path": None,
-                "agent_result": result,
-            }
+                agent = Agent(
+                    task=task_prompt,
+                    llm=self.llm,
+                )
+                result = await agent.run()
+                return {
+                    "success": True,
+                    "message": "Form submitted successfully by AI agent",
+                    "screenshot_path": None,
+                    "agent_result": result,
+                }
 
         except Exception as e:
             logger.error(f"Browser Use submission failed: {str(e)}")
@@ -123,9 +165,6 @@ NOTE: This is a two-step submission form:
             Dict with login result
         """
         try:
-            from browser_use import Agent
-
-            # AI agent handles login
             login_task = f"""Navigate to: {credentials["login_url"]}
 
 Log in using the following credentials:
@@ -134,8 +173,14 @@ Log in using the following credentials:
 
 Find the login form, fill in the credentials, and submit. Wait for successful login."""
 
-            agent = Agent(task=login_task, llm=self.llm)
-            result = await agent.run()
+            if self.use_cloud:
+                task = await self.cloud_client.tasks.create_task(task=login_task)
+                result = await task.complete()
+            else:
+                from browser_use import Agent
+
+                agent = Agent(task=login_task, llm=self.llm)
+                result = await agent.run()
 
             return {"success": True, "message": "Login successful", "result": result}
 
@@ -146,7 +191,7 @@ Find the login form, fill in the credentials, and submit. Wait for successful lo
     async def _submit_url_first(
         self,
         url: str,
-        form_data: Dict[str, any],
+        form_data: Dict[str, Any],
         selectors: Dict[str, str],
     ) -> Dict:
         """
@@ -166,7 +211,7 @@ Find the login form, fill in the credentials, and submit. Wait for successful lo
         logger.warning("⚠️ _submit_url_first is deprecated. URL-first logic is handled by main agent.")
         return {"success": True, "message": "URL-first submission handled by main agent"}
 
-    def _build_task_prompt(self, form_data: Dict[str, any]) -> str:
+    def _build_task_prompt(self, form_data: Dict[str, Any]) -> str:
         """
         Build AI agent task prompt from form data.
 
@@ -219,8 +264,6 @@ Be thorough and accurate. If a field is not found, skip it and continue with oth
         logger.info(f"AI analyzing form structure at {url}")
 
         try:
-            from browser_use import Agent
-
             analysis_task = f"""Navigate to: {url}
 
 Analyze the form on this page and identify:
@@ -233,8 +276,14 @@ Analyze the form on this page and identify:
 
 Provide a detailed description of the form structure."""
 
-            agent = Agent(task=analysis_task, llm=self.llm)
-            result = await agent.run()
+            if self.use_cloud:
+                task = await self.cloud_client.tasks.create_task(task=analysis_task)
+                result = await task.complete()
+            else:
+                from browser_use import Agent
+
+                agent = Agent(task=analysis_task, llm=self.llm)
+                result = await agent.run()
 
             return {
                 "success": True,

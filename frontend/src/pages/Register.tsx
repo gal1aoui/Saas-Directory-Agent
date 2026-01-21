@@ -1,10 +1,8 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { useAuth } from "@/contexts/AuthContext";
-import { UserCreateSchema } from "@/types/schema";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,7 +21,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { UserCreateSchema } from "@/types/schema";
 
 const RegisterSchema = UserCreateSchema.extend({
   confirmPassword: z.string().min(1, "Please confirm your password"),
@@ -64,10 +64,11 @@ export default function Register() {
         description: "Welcome to SaaS Directory Agent!",
       });
       navigate("/");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Registration failed",
-        description: error.detail || "Could not create account",
+        description:
+          (error as { detail?: string }).detail || "Could not create account",
         variant: "destructive",
       });
     }
@@ -122,7 +123,11 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -135,7 +140,11 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -146,7 +155,9 @@ export default function Register() {
                 className="w-full"
                 disabled={isLoading || form.formState.isSubmitting}
               >
-                {form.formState.isSubmitting ? "Creating account..." : "Register"}
+                {form.formState.isSubmitting
+                  ? "Creating account..."
+                  : "Register"}
               </Button>
             </form>
           </Form>

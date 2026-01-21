@@ -151,9 +151,7 @@ async def login(response: Response, credentials: UserLogin, db: Annotated[Sessio
     # Create tokens
     access_token = create_access_token(data={"sub": str(user.id)})
     refresh_token = create_refresh_token(data={"sub": str(user.id)})
-    logger.debug(
-        f"🔑 Created tokens - access token length: {len(access_token)}, refresh token length: {len(refresh_token)}"
-    )
+    logger.debug(f"🔑 Created tokens - access: {len(access_token)}, refresh: {len(refresh_token)}")
 
     # Also set cookies for browser-based requests
     logger.info(f"✅ Setting auth cookies for user {user.id}")

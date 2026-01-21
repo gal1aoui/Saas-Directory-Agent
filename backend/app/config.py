@@ -8,9 +8,13 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "postgresql://postgres:root@localhost:5432/directory_agent"
 
-    # Ollama Configuration (Local AI)
+    # Ollama Configuration (Local AI - Legacy, not used with cloud)
     OLLAMA_HOST: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "qwen2.5vl:latest"
+
+    # Browser Use Cloud Configuration
+    BROWSER_USE_API_KEY: str = ""  # Set in .env
+    USE_BROWSER_USE_CLOUD: bool = True  # Use cloud instead of local
 
     # Application
     APP_NAME: str = "SaaS Directory Agent"
@@ -24,7 +28,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # Encryption for directory credentials
-    ENCRYPTION_KEY: str = ""  # Generate with: from cryptography.fernet import Fernet; Fernet.generate_key()
+    # Generate with: from cryptography.fernet import Fernet; Fernet.generate_key()
+    ENCRYPTION_KEY: str = ""
 
     # CORS - Single origin
     ALLOWED_ORIGINS: str = "http://localhost:5173"

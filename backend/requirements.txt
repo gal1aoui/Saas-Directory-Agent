@@ -15,12 +15,14 @@ email-validator==2.1.0
 
 # Browser Automation
 playwright==1.57.0
-browser-use==0.1.19  # AI-powered browser automation
+browser-use==0.1.19  # Local mode: AI-powered browser automation with Ollama
+browser-use-sdk==2.0.13  # Cloud mode: Browser Use Cloud API
 
-# Ollama Client
+# Ollama Client (for local mode)
 ollama==0.6.1
 langchain-ollama==1.0.1
 httpx==0.28.1
+
 
 # Scheduling
 apscheduler==3.10.4

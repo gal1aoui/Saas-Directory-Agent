@@ -11,11 +11,11 @@ from app.models import Directory, SaasProduct, Submission, SubmissionStatus, Use
 from app.schemas import (
     BulkSubmissionRequest,
     DashboardStats,
-    Submission as SubmissionSchema,
     SubmissionCreate,
     SubmissionUpdate,
     SubmissionWithDetails,
 )
+from app.schemas import Submission as SubmissionSchema
 from app.services.workflow_manager import WorkflowManager
 
 router = APIRouter()
@@ -43,9 +43,7 @@ async def create_submission(
 
     directory = (
         db.query(Directory)
-        .filter(
-            Directory.id == submission.directory_id, Directory.user_id == current_user.id
-        )
+        .filter(Directory.id == submission.directory_id, Directory.user_id == current_user.id)
         .first()
     )
     if not directory:
@@ -73,9 +71,7 @@ async def bulk_submit(
     # Verify user owns the SaaS product
     saas = (
         db.query(SaasProduct)
-        .filter(
-            SaasProduct.id == request.saas_product_id, SaasProduct.user_id == current_user.id
-        )
+        .filter(SaasProduct.id == request.saas_product_id, SaasProduct.user_id == current_user.id)
         .first()
     )
     if not saas:
@@ -84,9 +80,7 @@ async def bulk_submit(
     # Verify user owns all directories
     directories = (
         db.query(Directory)
-        .filter(
-            Directory.id.in_(request.directory_ids), Directory.user_id == current_user.id
-        )
+        .filter(Directory.id.in_(request.directory_ids), Directory.user_id == current_user.id)
         .all()
     )
     if len(directories) != len(request.directory_ids):
@@ -135,9 +129,7 @@ async def get_dashboard_stats(
     """Get dashboard statistics for the authenticated user"""
     # All stats filtered by user_id
     total_submissions = (
-        db.query(func.count(Submission.id))
-        .filter(Submission.user_id == current_user.id)
-        .scalar()
+        db.query(func.count(Submission.id)).filter(Submission.user_id == current_user.id).scalar()
     )
     pending = (
         db.query(func.count(Submission.id))
@@ -165,18 +157,14 @@ async def get_dashboard_stats(
     )
     failed = (
         db.query(func.count(Submission.id))
-        .filter(
-            Submission.user_id == current_user.id, Submission.status == SubmissionStatus.FAILED
-        )
+        .filter(Submission.user_id == current_user.id, Submission.status == SubmissionStatus.FAILED)
         .scalar()
     )
 
     success_rate = (approved / total_submissions * 100) if total_submissions > 0 else 0
 
     total_directories = (
-        db.query(func.count(Directory.id))
-        .filter(Directory.user_id == current_user.id)
-        .scalar()
+        db.query(func.count(Directory.id)).filter(Directory.user_id == current_user.id).scalar()
     )
     active_directories = (
         db.query(func.count(Directory.id))

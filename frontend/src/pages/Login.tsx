@@ -1,9 +1,7 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { UserLoginSchema, type UserLogin } from "@/types/schema";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,7 +20,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { type UserLogin, UserLoginSchema } from "@/types/schema";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -51,11 +51,12 @@ export default function Login() {
         description: "Welcome back!",
       });
       navigate("/");
-    } catch (error: any) {
-      console.log(error)
+    } catch (error: unknown) {
+      console.log(error);
       toast({
         title: "Login failed",
-        description: error.detail || "Invalid email or password",
+        description:
+          (error as { detail?: string }).detail || "Invalid email or password",
         variant: "destructive",
       });
     }
@@ -97,7 +98,11 @@ export default function Login() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

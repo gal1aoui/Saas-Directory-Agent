@@ -45,9 +45,7 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
     # Relationships
-    saas_products = relationship(
-        "SaasProduct", back_populates="user", cascade="all, delete-orphan"
-    )
+    saas_products = relationship("SaasProduct", back_populates="user", cascade="all, delete-orphan")
     directories = relationship("Directory", back_populates="user", cascade="all, delete-orphan")
     submissions = relationship("Submission", back_populates="user", cascade="all, delete-orphan")
 

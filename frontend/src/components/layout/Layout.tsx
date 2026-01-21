@@ -1,13 +1,16 @@
-import { Database, Globe, LayoutDashboard, LogOut, Menu, Send, User as UserIcon, X } from "lucide-react";
+import {
+  Database,
+  Globe,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Send,
+  User as UserIcon,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import BulkSubmit from "../BulkSubmit";
-import Dashboard from "../Dashboard";
-import DirectoryManager from "../DirectoryManager";
-import SaasManager from "../SaasManager";
-import SubmissionList from "../SubmissionList";
-import { NavLink } from "./NavLink";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,8 +19,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import BulkSubmit from "../BulkSubmit";
+import Dashboard from "../Dashboard";
+import DirectoryManager from "../DirectoryManager";
+import SaasManager from "../SaasManager";
+import SubmissionList from "../SubmissionList";
+import { NavLink } from "./NavLink";
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -87,7 +96,7 @@ export default function Layout() {
                   </div>
                   <div className="flex flex-col items-start text-sm">
                     <span className="font-medium">{user?.username}</span>
-                    <span className="text-xs text-muted-foreground truncate max-w-[160px]">
+                    <span className="text-xs text-muted-foreground truncate max-w-40">
                       {user?.email}
                     </span>
                   </div>

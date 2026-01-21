@@ -127,9 +127,7 @@ def upgrade():
                     if plain_password:
                         encrypted = encrypt_credential(plain_password)
                         conn.execute(
-                            text(
-                                "UPDATE directories SET login_password = :encrypted WHERE id = :id"
-                            ),
+                            text("UPDATE directories SET login_password = :encrypted WHERE id = :id"),
                             {"encrypted": encrypted, "id": dir_id},
                         )
                 print(f"   ✅ Encrypted {len(directories_with_passwords)} passwords")
@@ -212,9 +210,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Database migration for authentication system")
-    parser.add_argument(
-        "--rollback", action="store_true", help="Rollback the migration"
-    )
+    parser.add_argument("--rollback", action="store_true", help="Rollback the migration")
 
     args = parser.parse_args()
 

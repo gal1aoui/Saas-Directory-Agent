@@ -8,6 +8,7 @@ Run this migration after updating the Directory model.
 """
 
 from sqlalchemy import text
+
 from app.database import engine
 
 
