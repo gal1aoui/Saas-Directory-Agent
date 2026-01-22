@@ -173,28 +173,28 @@ class BrowserUseService:
         if login_credentials:
             login_url = login_credentials.get("login_url", url)
             steps.append(f"""Step {step_num}: LOGIN
-Navigate to: {login_url}
-Find the login form and enter the following credentials:
-- Username/Email: {login_credentials.get("username", "")}
-- Password: {login_credentials.get("password", "")}
-Click the login/submit button and wait for the login to complete.
-Verify you are logged in before proceeding.""")
+                Navigate to: {login_url}
+                Find the login form and enter the following credentials:
+                - Username/Email: {login_credentials.get("username", "")}
+                - Password: {login_credentials.get("password", "")}
+                Click the login/submit button and wait for the login to complete.
+                Verify you are logged in before proceeding.""")
             step_num += 1
 
         # Step: Navigate to submission URL (after login)
         steps.append(f"""Step {step_num}: NAVIGATE TO SUBMISSION PAGE
-Navigate to: {url}
-Wait for the page to fully load.""")
+            Navigate to: {url}
+            Wait for the page to fully load.""")
         step_num += 1
 
         # Step: URL-first submission if required
         if requires_url_first:
             steps.append(f"""Step {step_num}: SUBMIT URL FIRST
-This directory uses a two-step submission pattern:
-1. Find the URL/website input field on the page
-2. Enter the website URL: {form_data.get("website_url", "")}
-3. Click the submit/continue/next button
-4. Wait for the full form page to load before proceeding""")
+                This directory uses a two-step submission pattern:
+                1. Find the URL/website input field on the page
+                2. Enter the website URL: {form_data.get("website_url", "")}
+                3. Click the submit/continue/next button
+                4. Wait for the full form page to load before proceeding""")
             step_num += 1
 
         # Step: Fill and submit the form
@@ -207,14 +207,14 @@ This directory uses a two-step submission pattern:
 
         unified_prompt = f"""You are performing a directory submission task. Complete ALL steps in order within this single browser session.
 
-{steps_text}
+            {steps_text}
 
-IMPORTANT:
-- Complete all steps in sequence without closing the browser
-- If login is required, stay logged in for the submission
-- Wait for each page to fully load before proceeding
-- If a field cannot be found, skip it and continue
-- Submit the form and wait for confirmation"""
+            IMPORTANT:
+            - Complete all steps in sequence without closing the browser
+            - If login is required, stay logged in for the submission
+            - Wait for each page to fully load before proceeding
+            - If a field cannot be found, skip it and continue
+            - Submit the form and wait for confirmation"""
 
         return unified_prompt
 

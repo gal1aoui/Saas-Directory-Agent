@@ -133,7 +133,7 @@ export const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({
             </Button>
             {showAgentResult && (
               <div className="mt-2 bg-muted/50 rounded-md p-3 text-sm max-h-60 overflow-y-auto">
-                <pre className="whitespace-pre-wrap break-words text-xs">
+                <pre className="whitespace-pre-wrap wrap-break-word text-xs">
                   {typeof submission.agent_result === "string"
                     ? submission.agent_result
                     : JSON.stringify(submission.agent_result, null, 2)}
