@@ -5,7 +5,7 @@ import type {
   SaasProductUpdate,
 } from "../../types/schema";
 import { SaasProductSchema } from "../../types/schema";
-import { validate } from "./utils";
+import { validate } from "../utils";
 
 export class SaasApi {
   private client: AxiosInstance;

@@ -1,5 +1,4 @@
 import { Edit, Globe, Plus, Trash2 } from "lucide-react";
-import type React from "react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,11 +24,12 @@ import {
   useDeleteDirectory,
   useDirectories,
 } from "../../store";
-import type { Directory, DirectoryStatus } from "../../types/schema";
+import type { Directory } from "../../types/schema";
 import { DirectoryForm } from "./DirectoryForm";
 import { getStatusVariant, getSuccessRate } from "./utils";
+import type { DirectoryStatus } from "@/types/models/enums";
 
-const DirectoryManager: React.FC = () => {
+export default function DirectoryManager() {
   const [statusFilter, setStatusFilter] =
     useState<DirectoryStatus | "all">("all");
   const { data: directories = [], isLoading } = useDirectories({
@@ -238,5 +238,3 @@ const DirectoryManager: React.FC = () => {
     </div>
   );
 };
-
-export default DirectoryManager;

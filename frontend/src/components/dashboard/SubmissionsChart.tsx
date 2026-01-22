@@ -1,5 +1,4 @@
 import { Database } from "lucide-react";
-import type React from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import {
   Card,
@@ -54,14 +53,14 @@ export const SubmissionsChart: React.FC<SubmissionsChartProps> = ({
                 dataKey="value"
               >
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
+                  <Cell key={`cell-${entry.name}-${index}`} fill={entry.color} />
                 ))}
               </Pie>
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex flex-col items-center justify-center h-[300px] text-muted-foreground">
+          <div className="flex flex-col items-center justify-center h-75 text-muted-foreground">
             <Database className="h-12 w-12 mb-2 text-muted" />
             <p>No submissions yet</p>
           </div>

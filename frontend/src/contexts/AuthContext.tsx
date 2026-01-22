@@ -1,7 +1,7 @@
 import type React from "react";
 import { createContext, useContext, useEffect, useState } from "react";
-import { api } from "@/services/api";
 import type { User, UserCreate, UserLogin } from "@/types/schema";
+import { api } from "@/services/api/ApiService";
 
 interface AuthContextType {
   user: User | null;
@@ -22,7 +22,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const checkAuth = async () => {
     try {
-      // First check if we have stored tokens
       const hasStoredTokens = localStorage.getItem("access_token") !== null;
 
       if (hasStoredTokens) {

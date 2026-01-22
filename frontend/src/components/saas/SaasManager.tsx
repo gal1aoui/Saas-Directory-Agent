@@ -1,5 +1,4 @@
 import { Edit, Plus, Trash2 } from "lucide-react";
-import type React from "react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ import {
 import type { SaasProduct } from "../../types/schema";
 import { SaasProductForm } from "./SaasProductForm";
 
-const SaasManager: React.FC = () => {
+export default function SaasManager() {
   const { data: products = [], isLoading } = useSaasProducts();
   const deleteMutation = useDeleteSaasProduct();
   const { toast } = useToast();
@@ -199,5 +198,3 @@ const SaasManager: React.FC = () => {
     </div>
   );
 };
-
-export default SaasManager;

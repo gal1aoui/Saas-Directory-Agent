@@ -7,7 +7,6 @@ import {
   Send,
   XCircle,
 } from "lucide-react";
-import type React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDashboardStats, useSubmissions } from "../../store";
 import { DashboardOverview } from "./DashboardOverview";
 
-const Dashboard: React.FC = () => {
+export default function Dashboard() {
   const {
     data: stats,
     isLoading: statsLoading,
@@ -146,5 +145,3 @@ const Dashboard: React.FC = () => {
     </div>
   );
 };
-
-export default Dashboard;

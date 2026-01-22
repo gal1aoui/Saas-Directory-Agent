@@ -1,4 +1,3 @@
-import type React from "react";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +14,7 @@ export interface BulkSubmitResult {
   submissions?: Submission[];
 }
 
-const BulkSubmit: React.FC = () => {
+export default function BulkSubmit() {
   const { data: saasProducts = [], isLoading: loadingSaas } = useSaasProducts();
   const { data: directories = [], isLoading: loadingDirs } = useDirectories({
     status: "active",
@@ -154,5 +153,3 @@ const BulkSubmit: React.FC = () => {
     </div>
   );
 };
-
-export default BulkSubmit;

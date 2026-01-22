@@ -13,7 +13,7 @@ import {
   SubmissionSchema,
   SubmissionWithDetailsSchema,
 } from "../../types/schema";
-import { validate } from "./utils";
+import { validate } from "../utils";
 
 export class SubmissionsApi {
   private client: AxiosInstance;

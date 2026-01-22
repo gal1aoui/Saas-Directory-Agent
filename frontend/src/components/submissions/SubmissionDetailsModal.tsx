@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import type { SubmissionWithDetails } from "../../types/schema";
 import { getStatusVariant } from "./utils";
+import { Label } from "../ui/label";
 
 interface SubmissionDetailsModalProps {
   submission: SubmissionWithDetails;
@@ -28,27 +29,27 @@ export const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({
 
       <div className="space-y-4">
         <div>
-          <label className="text-sm font-medium text-muted-foreground">
+          <Label className="text-sm font-medium text-muted-foreground">
             Directory
-          </label>
+          </Label>
           <p className="text-base font-medium mt-1">
             {submission.directory.name}
           </p>
         </div>
 
         <div>
-          <label className="text-sm font-medium text-muted-foreground">
+          <Label className="text-sm font-medium text-muted-foreground">
             SaaS Product
-          </label>
+          </Label>
           <p className="text-base font-medium mt-1">
             {submission.saas_product.name}
           </p>
         </div>
 
         <div>
-          <label className="text-sm font-medium text-muted-foreground">
+          <Label className="text-sm font-medium text-muted-foreground">
             Status
-          </label>
+          </Label>
           <div className="mt-1">
             <Badge variant={getStatusVariant(submission.status)}>
               {submission.status}
@@ -58,18 +59,18 @@ export const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({
 
         {submission.response_message && (
           <div>
-            <label className="text-sm font-medium text-muted-foreground">
+            <Label className="text-sm font-medium text-muted-foreground">
               Response Message
-            </label>
+            </Label>
             <p className="text-base mt-1">{submission.response_message}</p>
           </div>
         )}
 
         {submission.listing_url && (
           <div>
-            <label className="text-sm font-medium text-muted-foreground">
+            <Label className="text-sm font-medium text-muted-foreground">
               Listing URL
-            </label>
+            </Label>
             <a
               href={submission.listing_url}
               target="_blank"
@@ -83,9 +84,9 @@ export const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({
 
         {submission.retry_count > 0 && (
           <div>
-            <label className="text-sm font-medium text-muted-foreground">
+            <Label className="text-sm font-medium text-muted-foreground">
               Retry Count
-            </label>
+            </Label>
             <p className="text-base mt-1">
               {submission.retry_count} / {submission.max_retries}
             </p>
@@ -94,12 +95,12 @@ export const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({
 
         {submission.error_log && submission.error_log.length > 0 && (
           <div>
-            <label className="text-sm font-medium text-muted-foreground">
+            <Label className="text-sm font-medium text-muted-foreground">
               Error Log
-            </label>
+            </Label>
             <div className="mt-1 bg-destructive/10 rounded-md p-3 text-sm max-h-40 overflow-y-auto">
               {submission.error_log.map((error, i) => (
-                <div key={i} className="mb-2 last:mb-0">
+                <div key={`error-${error.error}-${i}`} className="mb-2 last:mb-0">
                   <span className="font-medium">
                     {format(new Date(error.timestamp), "MMM dd, yyyy HH:mm:ss")}
                   </span>

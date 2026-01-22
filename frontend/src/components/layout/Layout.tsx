@@ -21,12 +21,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import BulkSubmit from "../BulkSubmit";
-import Dashboard from "../Dashboard";
-import DirectoryManager from "../DirectoryManager";
-import SaasManager from "../SaasManager";
-import SubmissionList from "../SubmissionList";
 import { NavLink } from "./NavLink";
+import Dashboard from "../dashboard/Dashboard";
+import SubmissionList from "../submissions/SubmissionList";
+import BulkSubmit from "../bulk-submit/BulkSubmit";
+import SaasManager from "../saas/SaasManager";
+import DirectoryManager from "../directories/DirectoryManager";
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -116,7 +116,8 @@ export default function Layout() {
       </aside>
 
       {sidebarOpen && (
-        <div
+        <button
+          type="button"
           className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />

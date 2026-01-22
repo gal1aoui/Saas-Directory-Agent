@@ -108,16 +108,16 @@ class BrowserUseService:
             if requires_url_first and url_first_selectors:
                 task_prompt = f"""Navigate to: {url}
 
-{self._build_task_prompt(form_data)}
+                {self._build_task_prompt(form_data)}
 
-NOTE: This is a two-step submission form:
-1. First, find and fill the URL field with: {form_data.get("website_url", "")}
-2. Click the submit/continue button
-3. Then fill and submit the remaining form fields"""
+                NOTE: This is a two-step submission form:
+                1. First, find and fill the URL field with: {form_data.get("website_url", "")}
+                2. Click the submit/continue button
+                3. Then fill and submit the remaining form fields"""
             else:
                 task_prompt = f"""Navigate to: {url}
 
-{self._build_task_prompt(form_data)}"""
+                {self._build_task_prompt(form_data)}"""
 
             # Create and run agent (cloud or local)
             if self.use_cloud:
@@ -167,11 +167,11 @@ NOTE: This is a two-step submission form:
         try:
             login_task = f"""Navigate to: {credentials["login_url"]}
 
-Log in using the following credentials:
-- Username/Email: {credentials["username"]}
-- Password: {credentials["password"]}
+            Log in using the following credentials:
+            - Username/Email: {credentials["username"]}
+            - Password: {credentials["password"]}
 
-Find the login form, fill in the credentials, and submit. Wait for successful login."""
+            Find the login form, fill in the credentials, and submit. Wait for successful login."""
 
             if self.use_cloud:
                 task = await self.cloud_client.tasks.create_task(task=login_task)
@@ -232,23 +232,23 @@ Find the login form, fill in the credentials, and submit. Wait for successful lo
         fields_text = "\n".join(fields_description)
 
         prompt = f"""
-You are filling out a directory submission form.
+                You are filling out a directory submission form.
 
-Please find the form on this page and fill in the following information:
+                Please find the form on this page and fill in the following information:
 
-{fields_text}
+                {fields_text}
 
-Instructions:
-1. Identify all form fields on the page
-2. Match the provided data to the appropriate form fields
-3. Fill in each field with the corresponding value
-4. Handle any dropdowns, checkboxes, or special input types
-5. If there are multiple steps, complete each step in order
-6. Submit the form when all fields are filled
-7. Wait for confirmation or success message
+                Instructions:
+                1. Identify all form fields on the page
+                2. Match the provided data to the appropriate form fields
+                3. Fill in each field with the corresponding value
+                4. Handle any dropdowns, checkboxes, or special input types
+                5. If there are multiple steps, complete each step in order
+                6. Submit the form when all fields are filled
+                7. Wait for confirmation or success message
 
-Be thorough and accurate. If a field is not found, skip it and continue with others.
-"""
+                Be thorough and accurate. If a field is not found, skip it and continue with others.
+                """
         return prompt
 
     async def analyze_form_structure(self, url: str) -> Dict:
@@ -266,15 +266,15 @@ Be thorough and accurate. If a field is not found, skip it and continue with oth
         try:
             analysis_task = f"""Navigate to: {url}
 
-Analyze the form on this page and identify:
-1. All input fields (text, email, URL, textarea, etc.)
-2. Field labels and placeholders
-3. Required vs optional fields
-4. Any dropdowns or select menus
-5. Whether this is a multi-step form
-6. Submit button location
+            Analyze the form on this page and identify:
+            1. All input fields (text, email, URL, textarea, etc.)
+            2. Field labels and placeholders
+            3. Required vs optional fields
+            4. Any dropdowns or select menus
+            5. Whether this is a multi-step form
+            6. Submit button location
 
-Provide a detailed description of the form structure."""
+            Provide a detailed description of the form structure."""
 
             if self.use_cloud:
                 task = await self.cloud_client.tasks.create_task(task=analysis_task)

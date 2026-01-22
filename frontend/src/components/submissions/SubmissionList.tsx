@@ -1,5 +1,4 @@
 import { RefreshCw, Search, Send } from "lucide-react";
-import type React from "react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,15 +7,15 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useRetrySubmission, useSubmissions } from "../../store";
 import type {
-  SubmissionStatus,
   SubmissionWithDetails,
 } from "../../types/schema";
 import { useDebounce } from "../../utils/use-debounce";
 import { SubmissionDetailsModal } from "./SubmissionDetailsModal";
 import { SubmissionFilters } from "./SubmissionFilters";
 import { SubmissionTable } from "./SubmissionTable";
+import type { SubmissionStatus } from "@/types/models/enums";
 
-const SubmissionList: React.FC = () => {
+export default function SubmissionList() {
   const [statusFilter, setStatusFilter] = useState<SubmissionStatus | "all">(
     "all",
   );
@@ -68,7 +67,6 @@ const SubmissionList: React.FC = () => {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Submissions</h1>
           <p className="text-muted-foreground mt-2">
@@ -164,5 +162,3 @@ const SubmissionList: React.FC = () => {
     </div>
   );
 };
-
-export default SubmissionList;

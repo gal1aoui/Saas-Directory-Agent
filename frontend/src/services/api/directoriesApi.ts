@@ -6,7 +6,7 @@ import type {
   DirectoryUpdate,
 } from "../../types/schema";
 import { DirectorySchema } from "../../types/schema";
-import { validate } from "./utils";
+import { validate } from "../utils";
 
 export class DirectoriesApi {
   private client: AxiosInstance;

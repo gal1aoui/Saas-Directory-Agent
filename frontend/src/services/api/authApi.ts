@@ -2,7 +2,7 @@ import type { AxiosInstance } from "axios";
 import type { User, UserCreate, UserLogin } from "../../types/schema";
 import { UserSchema } from "../../types/schema";
 import { tokenManager } from "./tokenManager";
-import { validate } from "./utils";
+import { validate } from "../utils";
 
 export class AuthApi {
   private client: AxiosInstance;

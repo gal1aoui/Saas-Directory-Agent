@@ -123,52 +123,52 @@ class AIFormReader:
     async def _analyze_with_ollama(self, html_content: str, url: str) -> Dict:
         """Analyze form structure using local Ollama"""
         prompt = f"""You are a form analysis expert. Your task is to analyze HTML and
-extract form field information for a SaaS product submission form.
+            extract form field information for a SaaS product submission form.
 
-INSTRUCTIONS:
-1. Look for input, textarea, and select elements in the HTML
-2. Identify what type of information each field collects
-3. Create CSS selectors for each field (use id, name, or class attributes)
-4. Determine if fields are required (look for "required" attribute or asterisk *)
-5. Map fields to standardized names
+            INSTRUCTIONS:
+            1. Look for input, textarea, and select elements in the HTML
+            2. Identify what type of information each field collects
+            3. Create CSS selectors for each field (use id, name, or class attributes)
+            4. Determine if fields are required (look for "required" attribute or asterisk *)
+            5. Map fields to standardized names
 
-STANDARDIZED FIELD NAMES YOU MUST USE:
-- company_name: Product or company name
-- website_url: Website URL field
-- contact_email: Email address
-- description: Long description or details
-- short_description: Short description, tagline, or pitch
-- category: Category or industry selection
-- logo: Logo or image upload
-- twitter_url: Twitter link
-- linkedin_url: LinkedIn link
-- pricing_model: Pricing information
+            STANDARDIZED FIELD NAMES YOU MUST USE:
+            - company_name: Product or company name
+            - website_url: Website URL field
+            - contact_email: Email address
+            - description: Long description or details
+            - short_description: Short description, tagline, or pitch
+            - category: Category or industry selection
+            - logo: Logo or image upload
+            - twitter_url: Twitter link
+            - linkedin_url: LinkedIn link
+            - pricing_model: Pricing information
 
-HTML CONTENT FROM {url}:
-{html_content[:8000]}
+            HTML CONTENT FROM {url}:
+            {html_content[:8000]}
 
-OUTPUT FORMAT:
-Return ONLY a valid JSON object (no markdown, no explanations) with this exact structure:
-{{
-    "fields": [
-        {{
-            "field_name": "company_name",
-            "field_type": "text",
-            "field_label": "Company Name",
-            "selector": "input[name='company']",
-            "is_required": true,
-            "confidence_score": 95
-        }}
-    ],
-    "submit_button_selector": "button[type='submit']"
-}}
+            OUTPUT FORMAT:
+            Return ONLY a valid JSON object (no markdown, no explanations) with this exact structure:
+            {{
+                "fields": [
+                    {{
+                        "field_name": "company_name",
+                        "field_type": "text",
+                        "field_label": "Company Name",
+                        "selector": "input[name='company']",
+                        "is_required": true,
+                        "confidence_score": 95
+                    }}
+                ],
+                "submit_button_selector": "button[type='submit']"
+            }}
 
-IMPORTANT:
-- confidence_score should be 0-100 based on how sure you are about the mapping
-- field_type can be: text, email, url, textarea, file, select
-- selector must be a valid CSS selector
-- Return empty fields array if no form found
-- Do not include any text before or after the JSON"""
+            IMPORTANT:
+            - confidence_score should be 0-100 based on how sure you are about the mapping
+            - field_type can be: text, email, url, textarea, file, select
+            - selector must be a valid CSS selector
+            - Return empty fields array if no form found
+            - Do not include any text before or after the JSON"""
 
         response = self.client.generate(
             model=self.model,
@@ -188,42 +188,42 @@ IMPORTANT:
     def _create_form_analysis_prompt(self, html_content: Optional[str] = None) -> str:
         """Create prompt for form analysis"""
         prompt = """Analyze this web form screenshot and identify ALL input fields
-for submitting a SaaS product.
+            for submitting a SaaS product.
 
-Common fields to find:
-- Company/Product Name
-- Website URL
-- Email
-- Description (short/long)
-- Category
-- Logo upload
-- Social media links
-- Pricing
+            Common fields to find:
+            - Company/Product Name
+            - Website URL
+            - Email
+            - Description (short/long)
+            - Category
+            - Logo upload
+            - Social media links
+            - Pricing
 
-For EACH field provide:
-1. Standardized field_name: company_name, website_url, contact_email,
-   description, short_description, category, logo, twitter_url,
-   linkedin_url, pricing_model
-2. Field type: text, email, url, textarea, file, select
-3. Is it required? (look for * or "required")
-4. Visible label/placeholder
-5. CSS selector to target it
+            For EACH field provide:
+            1. Standardized field_name: company_name, website_url, contact_email,
+            description, short_description, category, logo, twitter_url,
+            linkedin_url, pricing_model
+            2. Field type: text, email, url, textarea, file, select
+            3. Is it required? (look for * or "required")
+            4. Visible label/placeholder
+            5. CSS selector to target it
 
-Return ONLY valid JSON:
-{
-    "fields": [
-        {
-            "field_name": "company_name",
-            "field_type": "text",
-            "field_label": "Company Name",
-            "selector": "#company-name",
-            "is_required": true,
-            "confidence_score": 95
-        }
-    ],
-    "submit_button_selector": "button[type='submit']",
-    "additional_notes": "any special requirements"
-}"""
+            Return ONLY valid JSON:
+            {
+                "fields": [
+                    {
+                        "field_name": "company_name",
+                        "field_type": "text",
+                        "field_label": "Company Name",
+                        "selector": "#company-name",
+                        "is_required": true,
+                        "confidence_score": 95
+                    }
+                ],
+                "submit_button_selector": "button[type='submit']",
+                "additional_notes": "any special requirements"
+            }"""
 
         if html_content:
             prompt += f"\n\nHTML context:\n{html_content[:5000]}"
