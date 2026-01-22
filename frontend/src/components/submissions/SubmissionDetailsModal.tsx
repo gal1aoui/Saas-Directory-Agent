@@ -1,6 +1,9 @@
 import { format } from "date-fns";
 import type React from "react";
+import { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DialogContent,
   DialogDescription,
@@ -18,6 +21,8 @@ interface SubmissionDetailsModalProps {
 export const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({
   submission,
 }) => {
+  const [showAgentResult, setShowAgentResult] = useState(false);
+
   return (
     <DialogContent className="max-w-2xl">
       <DialogHeader>
@@ -108,6 +113,33 @@ export const SubmissionDetailsModal: React.FC<SubmissionDetailsModalProps> = ({
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {submission.agent_result && (
+          <div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAgentResult(!showAgentResult)}
+              className="w-full justify-between"
+            >
+              <span>Show Agent Details</span>
+              {showAgentResult ? (
+                <ChevronUp className="h-4 w-4 ml-2" />
+              ) : (
+                <ChevronDown className="h-4 w-4 ml-2" />
+              )}
+            </Button>
+            {showAgentResult && (
+              <div className="mt-2 bg-muted/50 rounded-md p-3 text-sm max-h-60 overflow-y-auto">
+                <pre className="whitespace-pre-wrap break-words text-xs">
+                  {typeof submission.agent_result === "string"
+                    ? submission.agent_result
+                    : JSON.stringify(submission.agent_result, null, 2)}
+                </pre>
+              </div>
+            )}
           </div>
         )}
       </div>

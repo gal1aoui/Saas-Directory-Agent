@@ -77,6 +77,7 @@ class BrowserUseService:
     ) -> Dict:
         """
         Submit form to directory using AI-powered browser automation.
+        Login and submission are performed in a single continuous browser session.
 
         Args:
             url: Target directory URL
@@ -91,35 +92,17 @@ class BrowserUseService:
         logger.info(f"Starting AI-powered submission to {url}")
 
         try:
-            # Dynamic import to avoid loading if not used
-            from browser_use import Agent
+            # Build a unified task prompt that handles login + submission in ONE session
+            task_prompt = self._build_unified_task_prompt(
+                url=url,
+                form_data=form_data,
+                login_credentials=login_credentials,
+                requires_url_first=requires_url_first,
+            )
 
-            # Step 1: Handle login if required
-            if login_credentials:
-                logger.info("Performing login...")
-                login_result = await self._perform_login(login_credentials)
-                if not login_result["success"]:
-                    return login_result
+            logger.info("AI Agent executing unified login + submission task...")
 
-            # Step 2 & 3: AI Agent handles navigation, URL-first submission, and form filling
-            logger.info("AI Agent analyzing and filling form...")
-
-            # Build comprehensive task prompt with URL navigation
-            if requires_url_first and url_first_selectors:
-                task_prompt = f"""Navigate to: {url}
-
-                {self._build_task_prompt(form_data)}
-
-                NOTE: This is a two-step submission form:
-                1. First, find and fill the URL field with: {form_data.get("website_url", "")}
-                2. Click the submit/continue button
-                3. Then fill and submit the remaining form fields"""
-            else:
-                task_prompt = f"""Navigate to: {url}
-
-                {self._build_task_prompt(form_data)}"""
-
-            # Create and run agent (cloud or local)
+            # Create and run agent (cloud or local) - single session for entire workflow
             if self.use_cloud:
                 # Cloud mode - use browser-use-sdk
                 task = await self.cloud_client.tasks.create_task(task=task_prompt)
@@ -148,68 +131,93 @@ class BrowserUseService:
 
         except Exception as e:
             logger.error(f"Browser Use submission failed: {str(e)}")
+            if self.use_cloud:
+                result = await task.complete()
+                return {
+                    "success": False,
+                    "message": f"AI submission failed: {str(e)}",
+                    "screenshot_path": None,
+                    "agent_result": result,
+                }
+
             return {
                 "success": False,
                 "message": f"AI submission failed: {str(e)}",
                 "screenshot_path": None,
+                "agent_result": None,
             }
 
-    async def _perform_login(self, credentials: Dict[str, str]) -> Dict:
-        """
-        AI agent performs login.
-
-        Args:
-            credentials: {username, password, login_url}
-
-        Returns:
-            Dict with login result
-        """
-        try:
-            login_task = f"""Navigate to: {credentials["login_url"]}
-
-            Log in using the following credentials:
-            - Username/Email: {credentials["username"]}
-            - Password: {credentials["password"]}
-
-            Find the login form, fill in the credentials, and submit. Wait for successful login."""
-
-            if self.use_cloud:
-                task = await self.cloud_client.tasks.create_task(task=login_task)
-                result = await task.complete()
-            else:
-                from browser_use import Agent
-
-                agent = Agent(task=login_task, llm=self.llm)
-                result = await agent.run()
-
-            return {"success": True, "message": "Login successful", "result": result}
-
-        except Exception as e:
-            logger.error(f"Login failed: {str(e)}")
-            return {"success": False, "message": f"Login failed: {str(e)}"}
-
-    async def _submit_url_first(
+    def _build_unified_task_prompt(
         self,
         url: str,
         form_data: Dict[str, Any],
-        selectors: Dict[str, str],
-    ) -> Dict:
+        login_credentials: Optional[Dict[str, str]] = None,
+        requires_url_first: bool = False,
+    ) -> str:
         """
-        Handle two-step submission pattern (submit URL first, then fill form).
-        Note: This is now handled by the main agent with task instructions.
+        Build a unified task prompt that handles login and submission in one continuous session.
 
         Args:
-            url: Target URL
-            form_data: Form data containing website_url
-            selectors: {url_field_selector, url_submit_selector} (legacy, not used)
+            url: Target submission URL
+            form_data: Form data to submit
+            login_credentials: Optional login credentials
+            requires_url_first: Whether URL-first pattern is needed
 
         Returns:
-            Dict with submission result
+            Complete task prompt for the AI agent
         """
-        # This method is kept for backward compatibility but logic is integrated
-        # into the main submit_to_directory method
-        logger.warning("⚠️ _submit_url_first is deprecated. URL-first logic is handled by main agent.")
-        return {"success": True, "message": "URL-first submission handled by main agent"}
+        steps = []
+        step_num = 1
+
+        # Step: Login if credentials provided
+        if login_credentials:
+            login_url = login_credentials.get("login_url", url)
+            steps.append(f"""Step {step_num}: LOGIN
+Navigate to: {login_url}
+Find the login form and enter the following credentials:
+- Username/Email: {login_credentials.get("username", "")}
+- Password: {login_credentials.get("password", "")}
+Click the login/submit button and wait for the login to complete.
+Verify you are logged in before proceeding.""")
+            step_num += 1
+
+        # Step: Navigate to submission URL (after login)
+        steps.append(f"""Step {step_num}: NAVIGATE TO SUBMISSION PAGE
+Navigate to: {url}
+Wait for the page to fully load.""")
+        step_num += 1
+
+        # Step: URL-first submission if required
+        if requires_url_first:
+            steps.append(f"""Step {step_num}: SUBMIT URL FIRST
+This directory uses a two-step submission pattern:
+1. Find the URL/website input field on the page
+2. Enter the website URL: {form_data.get("website_url", "")}
+3. Click the submit/continue/next button
+4. Wait for the full form page to load before proceeding""")
+            step_num += 1
+
+        # Step: Fill and submit the form
+        form_fields = self._build_task_prompt(form_data)
+        steps.append(f"""Step {step_num}: FILL AND SUBMIT FORM
+{form_fields}""")
+
+        # Combine all steps into one unified prompt
+        steps_text = "\n\n".join(steps)
+
+        unified_prompt = f"""You are performing a directory submission task. Complete ALL steps in order within this single browser session.
+
+{steps_text}
+
+IMPORTANT:
+- Complete all steps in sequence without closing the browser
+- If login is required, stay logged in for the submission
+- Wait for each page to fully load before proceeding
+- If a field cannot be found, skip it and continue
+- Submit the form and wait for confirmation"""
+
+        return unified_prompt
+
 
     def _build_task_prompt(self, form_data: Dict[str, Any]) -> str:
         """

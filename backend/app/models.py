@@ -168,6 +168,7 @@ class Submission(Base):
     # AI detection data
     detected_fields = Column(JSON)  # Fields detected by AI
     form_screenshot_url = Column(String(500))  # Screenshot of the form
+    agent_result = Column(JSON)  # Full result from AI agent
 
     # Multi-step tracking
     current_step = Column(Integer, default=1)

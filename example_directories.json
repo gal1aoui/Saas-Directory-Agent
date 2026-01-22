@@ -75,7 +75,17 @@
   {
     "name": "SourceForge",
     "url": "https://sourceforge.net",
-    "submission_url": "https://sourceforge.net/p/forge/documentation/Create%20a%20Project/",
+    "submission_url": "https://sourceforge.net/software/vendors/new",
+    "status": "active",
+    "domain_authority": 91,
+    "category": "Open Source",
+    "requires_approval": false,
+    "estimated_approval_time": "Instant"
+  },
+  {
+    "name": "Crozdesk",
+    "url": "https://vendor.revleads.com",
+    "submission_url": "https://vendor.revleads.com/user/signup",
     "status": "active",
     "domain_authority": 91,
     "category": "Open Source",

@@ -182,6 +182,7 @@ export const SubmissionSchema = z.object({
     .nullable(),
   detected_fields: z.array(z.any()).optional().nullable(),
   form_screenshot_url: z.string().optional().nullable(),
+  agent_result: z.any().optional().nullable(),
   current_step: z.number().int().optional(),
   completed_steps: z.array(z.number()).optional().nullable(),
   created_at: z.coerce.date(),

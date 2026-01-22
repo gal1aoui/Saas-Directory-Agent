@@ -90,6 +90,7 @@ class BrowserUseStrategy:
             submission.submitted_at = datetime.now()
             submission.response_message = result["message"]
             submission.form_screenshot_url = result.get("screenshot_path")
+            submission.agent_result = result.get("agent_result")
 
             directory.total_submissions += 1
             directory.successful_submissions += 1
@@ -99,6 +100,7 @@ class BrowserUseStrategy:
             submission.status = SubmissionStatus.FAILED
             submission.response_message = result["message"]
             submission.form_screenshot_url = result.get("screenshot_path")
+            submission.agent_result = result.get("agent_result")
 
             directory.total_submissions += 1
 

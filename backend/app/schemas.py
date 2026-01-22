@@ -226,6 +226,7 @@ class Submission(SubmissionBase):
     error_log: Optional[List[SubmissionError]] = None
     detected_fields: Optional[Dict[str, Any]] = None
     form_screenshot_url: Optional[str] = None
+    agent_result: Optional[Any] = None
     created_at: datetime
     updated_at: datetime
 
