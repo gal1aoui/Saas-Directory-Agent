@@ -22,17 +22,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const checkAuth = async () => {
     try {
-      const hasStoredTokens = localStorage.getItem("access_token") !== null;
-
-      if (hasStoredTokens) {
-        console.log("📦 Found stored tokens, fetching user info...");
-      }
-
       const currentUser = await api.getCurrentUser();
       setUser(currentUser);
-      console.log("✅ User authenticated:", currentUser.email);
     } catch (error) {
-      console.log("❌ Not authenticated:", error);
       api.clearTokens(); // Clear tokens if user fetch fails
       setUser(null);
     } finally {

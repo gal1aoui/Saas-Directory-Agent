@@ -9,37 +9,52 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Dialog } from "@/components/ui/dialog";
+import { DeleteAlertDialog } from "@/components/DeleteAlertDialog";
+import { useModal } from "@/contexts/ModalContext";
 import { useToast } from "@/hooks/use-toast";
 import {
   useDeleteSaasProduct,
   useSaasProducts,
 } from "../../store";
 import type { SaasProduct } from "../../types/schema";
-import { SaasProductForm } from "./SaasProductForm";
+import { SaasProductForm } from "./forms/SaasProductForm";
 
 export default function SaasManager() {
   const { data: products = [], isLoading } = useSaasProducts();
   const deleteMutation = useDeleteSaasProduct();
   const { toast } = useToast();
+  const { openModal } = useModal();
 
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<SaasProduct | null>(
-    null,
-  );
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingProductId, setDeletingProductId] = useState<number | null>(null);
 
-  const handleEdit = (product: SaasProduct) => {
-    setEditingProduct(product);
-    setIsFormOpen(true);
+  const handleAddProduct = () => {
+    openModal({
+      title: "Add SaaS Product",
+      description: "Add a new SaaS product to submit to directories",
+      render: ({ close }) => <SaasProductForm close={close} />,
+    });
   };
 
-  const handleDelete = async (id: number) => {
+  const handleEdit = (product: SaasProduct) => {
+    openModal({
+      title: "Edit SaaS Product",
+      description: "Update the details of your SaaS product",
+      render: ({ close }) => <SaasProductForm data={product} close={close} />,
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!deletingProductId) return;
+
     try {
-      await deleteMutation.mutateAsync(id);
+      await deleteMutation.mutateAsync(deletingProductId);
       toast({
         title: "Product deleted",
         description: "SaaS product has been deleted successfully",
       });
+      setDeleteDialogOpen(false);
+      setDeletingProductId(null);
     } catch (error) {
       console.error("Error deleting product:", error);
       toast({
@@ -50,13 +65,9 @@ export default function SaasManager() {
     }
   };
 
-  const handleCloseForm = () => {
-    setIsFormOpen(false);
-    setEditingProduct(null);
-  };
-
-  const handleSuccess = () => {
-    handleCloseForm();
+  const openDeleteDialog = (id: number) => {
+    setDeletingProductId(id);
+    setDeleteDialogOpen(true);
   };
 
   return (
@@ -70,7 +81,7 @@ export default function SaasManager() {
               Manage your SaaS products for directory submissions
             </p>
           </div>
-          <Button onClick={() => setIsFormOpen(true)}>
+          <Button onClick={handleAddProduct}>
             <Plus className="h-4 w-4 mr-2" />
             Add Product
           </Button>
@@ -99,7 +110,7 @@ export default function SaasManager() {
                     Get started by adding your first SaaS product
                   </p>
                 </div>
-                <Button onClick={() => setIsFormOpen(true)}>
+                <Button onClick={handleAddProduct}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Your First Product
                 </Button>
@@ -172,7 +183,7 @@ export default function SaasManager() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleDelete(product.id)}
+                      onClick={() => openDeleteDialog(product.id)}
                       disabled={deleteMutation.isPending}
                       className="flex-1"
                     >
@@ -186,14 +197,13 @@ export default function SaasManager() {
           </div>
         )}
 
-        {/* Form Dialog */}
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <SaasProductForm
-            product={editingProduct}
-            onClose={handleCloseForm}
-            onSuccess={handleSuccess}
-          />
-        </Dialog>
+        {/* Delete Confirmation Dialog */}
+        <DeleteAlertDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          description="This action cannot be undone. This will permanently delete this SaaS product and all associated data."
+          onDelete={handleDelete}
+        />
       </div>
     </div>
   );

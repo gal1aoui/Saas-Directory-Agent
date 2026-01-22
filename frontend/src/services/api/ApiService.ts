@@ -76,6 +76,9 @@ class ApiService {
   deleteDirectory(...args: Parameters<DirectoriesApi["deleteDirectory"]>) {
     return this.directoriesApi.deleteDirectory(...args);
   }
+  getDirectoryCredentials(...args: Parameters<DirectoriesApi["getDirectoryCredentials"]>) {
+    return this.directoriesApi.getDirectoryCredentials(...args);
+  }
 
   // Submissions API
   getSubmissions(...args: Parameters<SubmissionsApi["getSubmissions"]>) {

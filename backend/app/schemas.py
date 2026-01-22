@@ -132,7 +132,16 @@ class DirectoryBase(BaseModel):
 
 
 class DirectoryCreate(DirectoryBase):
-    pass
+    # Login credentials
+    requires_login: bool = False
+    login_url: Optional[str] = None
+    login_username: Optional[str] = None
+    login_password: Optional[str] = None
+
+    # Two-step URL submission
+    requires_url_first: bool = False
+    url_field_selector: Optional[str] = None
+    url_submit_selector: Optional[str] = None
 
 
 class DirectoryUpdate(BaseModel):
@@ -145,6 +154,17 @@ class DirectoryUpdate(BaseModel):
     requires_approval: Optional[bool] = None
     estimated_approval_time: Optional[str] = None
 
+    # Login credentials
+    requires_login: Optional[bool] = None
+    login_url: Optional[str] = None
+    login_username: Optional[str] = None
+    login_password: Optional[str] = None
+
+    # Two-step URL submission
+    requires_url_first: Optional[bool] = None
+    url_field_selector: Optional[str] = None
+    url_submit_selector: Optional[str] = None
+
 
 class Directory(DirectoryBase):
     id: int
@@ -154,6 +174,17 @@ class Directory(DirectoryBase):
     last_form_detection: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
+
+    # Login settings (password is excluded for security)
+    requires_login: bool = False
+    login_url: Optional[str] = None
+    login_username: Optional[str] = None
+    login_password: Optional[str] = None  # Decrypted by the property in the model
+
+    # Two-step URL submission
+    requires_url_first: bool = False
+    url_field_selector: Optional[str] = None
+    url_submit_selector: Optional[str] = None
 
     class Config:
         from_attributes = True

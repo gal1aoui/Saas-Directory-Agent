@@ -34,8 +34,6 @@ export class AuthApi {
     if (response.data.refresh_token) {
       tokenManager.setRefreshToken(response.data.refresh_token);
     }
-
-    console.log("✅ Login successful, tokens stored");
     return validate(UserSchema, response.data.user);
   }
 

@@ -4,9 +4,6 @@ class TokenManager {
   loadTokens(): void {
     try {
       this.accessToken = localStorage.getItem("access_token");
-      if (this.accessToken) {
-        console.log("📦 Tokens loaded from localStorage");
-      }
     } catch (e) {
       console.warn("Failed to load tokens from localStorage", e);
     }

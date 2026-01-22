@@ -52,7 +52,6 @@ export default function Login() {
       });
       navigate("/");
     } catch (error: unknown) {
-      console.log(error);
       toast({
         title: "Login failed",
         description:

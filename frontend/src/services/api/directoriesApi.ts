@@ -46,4 +46,9 @@ export class DirectoriesApi {
   async deleteDirectory(id: number): Promise<void> {
     await this.client.delete(`/directories/${id}`);
   }
+
+  async getDirectoryCredentials(id: number): Promise<Directory> {
+    const response = await this.client.get<Directory>(`/directories/${id}/credentials`);
+    return validate(DirectorySchema, response.data);
+  }
 }

@@ -1,0 +1,491 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff, Save } from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { api } from "@/services/api/ApiService";
+import { useCreateDirectory, useUpdateDirectory } from "@/store";
+import {
+  type Directory,
+  type DirectoryCreate,
+  DirectoryCreateSchema,
+} from "@/types/schema";
+
+interface DirectoryFormProps {
+  data?: Directory;
+  close: () => void;
+}
+
+export const DirectoryForm: React.FC<DirectoryFormProps> = ({ data: directory, close }) => {
+  const isEditing = !!directory;
+  const { toast } = useToast();
+  const [showPassword, setShowPassword] = useState(false);
+
+  const createMutation = useCreateDirectory();
+  const updateMutation = useUpdateDirectory();
+
+  const form = useForm<DirectoryCreate>({
+    resolver: zodResolver(DirectoryCreateSchema),
+    defaultValues: directory
+      ? {
+          name: directory.name || "",
+          url: directory.url || "",
+          submission_url: directory.submission_url || "",
+          status: directory.status || "active",
+          domain_authority: directory.domain_authority ?? undefined,
+          category: directory.category || "",
+          requires_approval: directory.requires_approval ?? true,
+          estimated_approval_time: directory.estimated_approval_time || "",
+          requires_login: directory.requires_login ?? false,
+          login_url: directory.login_url || "",
+          login_username: directory.login_username || "",
+          login_password: directory.login_password || "",
+          requires_url_first: directory.requires_url_first ?? false,
+          url_field_selector: directory.url_field_selector || "",
+          url_submit_selector: directory.url_submit_selector || "",
+        }
+      : {
+          name: "",
+          url: "",
+          status: "active",
+          requires_approval: true,
+          requires_login: false,
+          requires_url_first: false,
+        },
+  });
+
+  const requiresLogin = form.watch("requires_login");
+  const requiresUrlFirst = form.watch("requires_url_first");
+
+  // Fetch full directory details including credentials when editing
+  useEffect(() => {
+    const fetchDirectoryDetails = async () => {
+      if (isEditing && directory?.id) {
+        try {
+          const fullDirectory = await api.getDirectoryCredentials(directory.id);
+
+          // Update all form values with fresh data from backend
+          form.reset({
+            name: fullDirectory.name || "",
+            url: fullDirectory.url || "",
+            submission_url: fullDirectory.submission_url || "",
+            status: fullDirectory.status || "active",
+            domain_authority: fullDirectory.domain_authority ?? undefined,
+            category: fullDirectory.category || "",
+            requires_approval: fullDirectory.requires_approval ?? true,
+            estimated_approval_time: fullDirectory.estimated_approval_time || "",
+            requires_login: fullDirectory.requires_login ?? false,
+            login_url: fullDirectory.login_url || "",
+            login_username: fullDirectory.login_username || "",
+            login_password: fullDirectory.login_password || "",
+            requires_url_first: fullDirectory.requires_url_first ?? false,
+            url_field_selector: fullDirectory.url_field_selector || "",
+            url_submit_selector: fullDirectory.url_submit_selector || "",
+          });
+        } catch (error) {
+          console.error("Failed to fetch directory details:", error);
+          toast({
+            title: "Warning",
+            description: "Could not load complete directory data",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    fetchDirectoryDetails();
+  }, [isEditing, directory?.id, form, toast]);
+
+  const onSubmit = async (data: DirectoryCreate) => {
+    try {
+      if (isEditing && directory) {
+        await updateMutation.mutateAsync({ id: directory.id, data });
+        toast({
+          title: "Directory updated",
+          description: "Directory has been updated successfully",
+        });
+      } else {
+        await createMutation.mutateAsync(data);
+        toast({
+          title: "Directory created",
+          description: "Directory has been created successfully",
+        });
+      }
+      close();
+    } catch (error: unknown) {
+      toast({
+        title: "Error",
+        description:
+          (error as { detail?: string }).detail || "Failed to save directory",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <Tabs defaultValue="required" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="required">Directory Details</TabsTrigger>
+            <TabsTrigger value="optional">Additional Details</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="required" className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Directory Name *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Product Hunt" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Directory URL *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="url"
+                      placeholder="https://www.producthunt.com"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="testing">Testing</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="requires_approval"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Requires Manual Approval</FormLabel>
+                  </div>
+                </FormItem>
+              )}
+            />
+          </TabsContent>
+
+          {/* Optional Fields Tab */}
+          <TabsContent value="optional" className="space-y-4">
+            <FormField
+              control={form.control}
+              name="submission_url"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Submission URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="url"
+                      placeholder="https://www.producthunt.com/posts/new"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>Leave empty to use main URL</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="domain_authority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Domain Authority (0-100)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        placeholder="85"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value ? Number(e.target.value) : undefined,
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Tech Discovery" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="estimated_approval_time"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Estimated Approval Time</FormLabel>
+                  <FormControl>
+                    <Input placeholder="24 hours" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Login Section */}
+            <div className="border-t pt-4 mt-4 space-y-4">
+              <h3 className="text-sm font-semibold">Login Settings</h3>
+
+              <FormField
+                control={form.control}
+                name="requires_login"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Requires Login</FormLabel>
+                      <FormDescription>
+                        Enable if directory requires authentication
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {requiresLogin && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="login_url"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Login URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="url"
+                            placeholder="https://example.com/login"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="login_username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input placeholder="username" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="login_password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="password"
+                                {...field}
+                                className="pr-10"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                ) : (
+                                  <Eye className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </Button>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Two-Step URL Submission Section */}
+            <div className="border-t pt-4 mt-4 space-y-4">
+              <h3 className="text-sm font-semibold">Two-Step URL Submission</h3>
+
+              <FormField
+                control={form.control}
+                name="requires_url_first"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Requires URL First</FormLabel>
+                      <FormDescription>
+                        Enable if directory requires submitting URL before form
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
+              {requiresUrlFirst && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="url_field_selector"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URL Field Selector</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="#url-input, input[name='url']"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          CSS selector for the URL input field
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="url_submit_selector"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>URL Submit Button Selector</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="#submit-url, button[type='submit']"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          CSS selector for the URL submit button
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="button" variant="outline" onClick={close} disabled={isPending}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isPending}>
+            <Save className="h-4 w-4 mr-2" />
+            {isPending ? "Saving..." : isEditing ? "Update" : "Create"}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+};

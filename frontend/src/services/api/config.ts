@@ -20,15 +20,11 @@ export function createApiClient(): AxiosInstance {
   // Request interceptor to add access token and log requests
   client.interceptors.request.use(
     (config) => {
-      console.log(`📤 ${config.method?.toUpperCase()} ${config.url}`);
-
       const token = tokenManager.getAccessToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
-        console.log("🔑 Authorization header set");
       }
 
-      console.log("🍪 Outgoing cookies:", document.cookie);
       return config;
     },
     (error) => Promise.reject(error),
@@ -49,11 +45,7 @@ export function createApiClient(): AxiosInstance {
         originalRequest._retry = true;
 
         try {
-          console.log("🔄 Attempting to refresh token...");
-
-          // Call refresh endpoint
           const refreshResponse = await client.post("/auth/refresh", {});
-          console.log("✅ Token refreshed successfully");
 
           // Update stored token if returned in response
           if (refreshResponse.data.access_token) {

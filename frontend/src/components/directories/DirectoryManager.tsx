@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -19,13 +18,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DeleteAlertDialog } from "@/components/DeleteAlertDialog";
+import { useModal } from "@/contexts/ModalContext";
 import { useToast } from "@/hooks/use-toast";
 import {
   useDeleteDirectory,
   useDirectories,
 } from "../../store";
 import type { Directory } from "../../types/schema";
-import { DirectoryForm } from "./DirectoryForm";
+import { DirectoryForm } from "./forms/DirectoryForm";
 import { getStatusVariant, getSuccessRate } from "./utils";
 import type { DirectoryStatus } from "@/types/models/enums";
 
@@ -37,24 +38,38 @@ export default function DirectoryManager() {
   });
   const deleteMutation = useDeleteDirectory();
   const { toast } = useToast();
+  const { openModal } = useModal();
 
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingDirectory, setEditingDirectory] = useState<Directory | null>(
-    null,
-  );
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingDirectoryId, setDeletingDirectoryId] = useState<number | null>(null);
 
-  const handleEdit = (directory: Directory) => {
-    setEditingDirectory(directory);
-    setIsFormOpen(true);
+  const handleAddDirectory = () => {
+    openModal({
+      title: "Add Directory",
+      description: "Add a new directory to submit your SaaS products",
+      render: ({ close }) => <DirectoryForm close={close} />,
+    });
   };
 
-  const handleDelete = async (id: number) => {
+  const handleEdit = (directory: Directory) => {
+    openModal({
+      title: "Edit Directory",
+      description: "Update directory information and settings",
+      render: ({ close }) => <DirectoryForm data={directory} close={close} />,
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!deletingDirectoryId) return;
+
     try {
-      await deleteMutation.mutateAsync(id);
+      await deleteMutation.mutateAsync(deletingDirectoryId);
       toast({
         title: "Directory deleted",
         description: "Directory has been deleted successfully",
       });
+      setDeleteDialogOpen(false);
+      setDeletingDirectoryId(null);
     } catch (error) {
       console.error("Error deleting directory:", error);
       toast({
@@ -65,13 +80,9 @@ export default function DirectoryManager() {
     }
   };
 
-  const handleCloseForm = () => {
-    setIsFormOpen(false);
-    setEditingDirectory(null);
-  };
-
-  const handleSuccess = () => {
-    handleCloseForm();
+  const openDeleteDialog = (id: number) => {
+    setDeletingDirectoryId(id);
+    setDeleteDialogOpen(true);
   };
 
   return (
@@ -102,7 +113,7 @@ export default function DirectoryManager() {
                 <SelectItem value="testing">Testing</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={() => setIsFormOpen(true)}>
+            <Button onClick={handleAddDirectory}>
               <Plus className="h-4 w-4 mr-2" />
               Add Directory
             </Button>
@@ -132,7 +143,7 @@ export default function DirectoryManager() {
                     Add your first directory to start submitting
                   </p>
                 </div>
-                <Button onClick={() => setIsFormOpen(true)}>
+                <Button onClick={handleAddDirectory}>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Your First Directory
                 </Button>
@@ -211,7 +222,7 @@ export default function DirectoryManager() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDelete(directory.id)}
+                            onClick={() => openDeleteDialog(directory.id)}
                             disabled={deleteMutation.isPending}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -226,14 +237,13 @@ export default function DirectoryManager() {
           </Card>
         )}
 
-        {/* Form Dialog */}
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DirectoryForm
-            directory={editingDirectory}
-            onClose={handleCloseForm}
-            onSuccess={handleSuccess}
-          />
-        </Dialog>
+        {/* Delete Confirmation Dialog */}
+        <DeleteAlertDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          description="This action cannot be undone. This will permanently delete this directory and all associated data."
+          onDelete={handleDelete}
+        />
       </div>
     </div>
   );

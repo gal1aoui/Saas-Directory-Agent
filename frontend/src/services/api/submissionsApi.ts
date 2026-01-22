@@ -41,7 +41,6 @@ export class SubmissionsApi {
             : filters,
       },
     );
-    console.log("data: ", response.data);
     return response.data;
   }
 
@@ -54,12 +53,6 @@ export class SubmissionsApi {
 
   async createSubmission(data: SubmissionCreate): Promise<Submission> {
     const response = await this.client.post<Submission>("/submissions", data);
-    console.log(
-      "create: ",
-      validate(SubmissionSchema, response.data),
-      response.data,
-      response.status,
-    );
     return validate(SubmissionSchema, response.data);
   }
 
@@ -68,12 +61,7 @@ export class SubmissionsApi {
       "/submissions/bulk",
       data,
     );
-    console.log(
-      "bulk create: ",
-      z.array(SubmissionSchema).parse(response.data),
-      response.data,
-      response.status,
-    );
+
     return z.array(SubmissionSchema).parse(response.data);
   }
 
