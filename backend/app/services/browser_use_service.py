@@ -9,7 +9,10 @@ Supports both cloud API (default) and local Ollama modes.
 
 import logging
 import os
+from datetime import date, datetime, time, timedelta
+from decimal import Decimal
 from typing import Any, Dict, Optional
+from uuid import UUID
 
 from browser_use_sdk import AsyncBrowserUse
 
@@ -17,6 +20,47 @@ from app.config import get_settings
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
+
+
+def make_json_serializable(obj: Any) -> Any:
+    """
+    Recursively convert all non-JSON-serializable objects in a nested structure.
+    Handles datetime, date, time, timedelta, UUID, bytes, Decimal, and custom objects.
+    """
+    if obj is None:
+        return None
+    elif isinstance(obj, (str, int, float, bool)):
+        return obj
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, date):
+        return obj.isoformat()
+    elif isinstance(obj, time):
+        return obj.isoformat()
+    elif isinstance(obj, timedelta):
+        return obj.total_seconds()
+    elif isinstance(obj, UUID):
+        return str(obj)
+    elif isinstance(obj, bytes):
+        return obj.decode('utf-8', errors='replace')
+    elif isinstance(obj, Decimal):
+        return float(obj)
+    elif isinstance(obj, dict):
+        return {str(key): make_json_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple, set, frozenset)):
+        return [make_json_serializable(item) for item in obj]
+    elif hasattr(obj, '__dict__'):
+        # Handle custom objects by converting their __dict__
+        return make_json_serializable(obj.__dict__)
+    elif hasattr(obj, 'model_dump'):
+        # Handle Pydantic models
+        return make_json_serializable(obj.model_dump())
+    elif hasattr(obj, 'dict'):
+        # Handle older Pydantic models
+        return make_json_serializable(obj.dict())
+    else:
+        # Fallback: convert to string
+        return str(obj)
 
 
 class BrowserUseService:
@@ -107,11 +151,17 @@ class BrowserUseService:
                 # Cloud mode - use browser-use-sdk
                 task = await self.cloud_client.tasks.create_task(task=task_prompt)
                 result = await task.complete()
+                # Convert TaskView to dict for JSON serialization
+                # Use mode='json' and then recursively convert any remaining datetime objects
+                agent_result = result.model_dump(mode='json') if hasattr(result, 'model_dump') else (
+                    result.dict() if hasattr(result, 'dict') else str(result)
+                )
+                agent_result = make_json_serializable(agent_result)
                 return {
                     "success": True,
                     "message": "Form submitted successfully by Browser Use Cloud",
                     "screenshot_path": None,
-                    "agent_result": result,
+                    "agent_result": agent_result,
                 }
             else:
                 # Local mode - use browser-use library with Ollama
@@ -133,11 +183,17 @@ class BrowserUseService:
             logger.error(f"Browser Use submission failed: {str(e)}")
             if self.use_cloud:
                 result = await task.complete()
+                # Convert TaskView to dict for JSON serialization
+                # Use mode='json' and then recursively convert any remaining datetime objects
+                agent_result = result.model_dump(mode='json') if hasattr(result, 'model_dump') else (
+                    result.dict() if hasattr(result, 'dict') else str(result)
+                )
+                agent_result = make_json_serializable(agent_result)
                 return {
                     "success": False,
                     "message": f"AI submission failed: {str(e)}",
                     "screenshot_path": None,
-                    "agent_result": result,
+                    "agent_result": agent_result,
                 }
 
             return {
