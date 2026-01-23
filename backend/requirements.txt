@@ -6,7 +6,6 @@ python-multipart==0.0.6
 # Database
 sqlalchemy==2.0.25
 psycopg2-binary==2.9.9
-alembic==1.13.1
 
 # Validation
 pydantic==2.12.5
@@ -29,8 +28,6 @@ apscheduler==3.10.4
 
 # Utilities
 python-dotenv==1.0.1
-aiofiles==23.2.1
-pillow==10.2.0
 ruff==0.14.13
 mypy==1.19.1
 

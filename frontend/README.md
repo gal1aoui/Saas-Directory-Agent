@@ -1,24 +1,20 @@
 # SaaS Directory Agent - Frontend
 
-Modern React TypeScript frontend with TanStack Query, Zod validation, and Biome for code quality.
+This is the React frontend I built for the SaaS Directory Submission Agent. It provides a clean dashboard for managing products, directories, and tracking submissions.
 
-## 🚀 Features
+## Tech Stack
 
-- ✅ **React 18 + TypeScript** - Type-safe development
-- ✅ **TanStack Query** - Smart data fetching & caching
-- ✅ **Zod Validation** - Runtime type checking
-- ✅ **Tailwind CSS** - Utility-first styling
-- ✅ **Biome** - Fast linting & formatting
-- ✅ **React Hook Form** - Performant forms
-- ✅ **Recharts** - Beautiful data visualization
+I chose this stack for a fast, type-safe development experience:
 
-## 📋 Prerequisites
+- **React 19** - Latest React with improved performance
+- **TypeScript** - Type safety throughout
+- **Vite** - Fast build tool and dev server
+- **TanStack Query** - Smart data fetching with caching
+- **Tailwind CSS** - Utility-first styling
+- **React Hook Form + Zod** - Form handling with validation
+- **Recharts** - Data visualization for the dashboard
 
-- Node.js 18+
-- npm or yarn
-- Backend API running
-
-## 🔧 Installation
+## Getting Started
 
 ```bash
 cd frontend
@@ -32,422 +28,182 @@ npm run dev
 
 Visit http://localhost:5173
 
-## 🏃 Available Scripts
+## Environment Variables
 
-```bash
-# Development
-npm run dev          # Start dev server (Vite)
-npm run build        # Build for production
-npm run preview      # Preview production build
+Create a `.env` file:
 
-# Code Quality
-npm run format       # Format code with Biome
-npm run lint         # Lint code with Biome
-npm run check        # Type check with TypeScript
+```env
+VITE_API_URL=http://localhost:8000/api
 ```
 
-## 📁 Project Structure
+## Available Scripts
+
+```bash
+npm run dev      # Start dev server
+npm run build    # Build for production
+npm run preview  # Preview production build
+npm run format   # Format code with Biome
+npm run lint     # Lint code with Biome
+```
+
+## Project Structure
 
 ```
 frontend/
 ├── src/
-│   ├── components/         # React components
-│   │   ├── Dashboard.tsx
-│   │   ├── SubmissionList.tsx
-│   │   ├── BulkSubmit.tsx
-│   │   ├── SaasManager.tsx
-│   │   └── DirectoryManager.tsx
-│   ├── hooks/             # Custom React hooks
-│   │   └── index.ts       # TanStack Query hooks
-│   ├── providers/         # Context providers
-│   │   └── QueryProvider.tsx
-│   ├── services/          # API client
-│   │   └── api.ts
-│   ├── types/             # TypeScript types
-│   │   └── schemas.ts     # Zod schemas
-│   ├── App.tsx            # Main app component
-│   ├── main.tsx           # Entry point
-│   └── index.css          # Global styles
+│   ├── components/
+│   │   ├── ui/                    # Reusable UI components (shadcn/ui)
+│   │   │   ├── button.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── dialog.tsx
+│   │   │   ├── form.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── select.tsx
+│   │   │   ├── table.tsx
+│   │   │   ├── tabs.tsx
+│   │   │   ├── toast.tsx
+│   │   │   └── ...
+│   │   ├── layout/
+│   │   │   ├── Layout.tsx         # Main layout wrapper
+│   │   │   └── NavLink.tsx        # Navigation links
+│   │   ├── dashboard/
+│   │   │   ├── Dashboard.tsx      # Dashboard page
+│   │   │   ├── DashboardOverview.tsx
+│   │   │   ├── RecentSubmissions.tsx
+│   │   │   ├── SubmissionsChart.tsx
+│   │   │   ├── StatusIcon.tsx
+│   │   │   └── utils.ts
+│   │   ├── submissions/
+│   │   │   ├── SubmissionList.tsx
+│   │   │   ├── SubmissionTable.tsx
+│   │   │   ├── SubmissionFilters.tsx
+│   │   │   ├── SubmissionDetailsModal.tsx
+│   │   │   ├── StatusIcon.tsx
+│   │   │   └── utils.ts
+│   │   ├── bulk-submit/
+│   │   │   ├── BulkSubmit.tsx     # Bulk submission page
+│   │   │   ├── SaasProductSelection.tsx
+│   │   │   ├── DirectorySelection.tsx
+│   │   │   ├── SubmitButton.tsx
+│   │   │   └── InfoBox.tsx
+│   │   ├── saas/
+│   │   │   ├── SaasManager.tsx    # SaaS products page
+│   │   │   └── forms/
+│   │   │       └── SaasProductForm.tsx
+│   │   ├── directories/
+│   │   │   ├── DirectoryManager.tsx # Directories page
+│   │   │   ├── forms/
+│   │   │   │   └── DirectoryForm.tsx
+│   │   │   └── utils.ts
+│   │   ├── DeleteAlertDialog.tsx
+│   │   ├── ModalRoot.tsx
+│   │   └── ProtectedRoute.tsx
+│   ├── contexts/
+│   │   ├── AuthContext.tsx        # Authentication state
+│   │   └── ModalContext.tsx       # Modal management
+│   ├── pages/
+│   │   ├── Login.tsx
+│   │   └── Register.tsx
+│   ├── services/
+│   │   ├── api/
+│   │   │   ├── ApiService.ts      # Main API service
+│   │   │   ├── authApi.ts         # Auth endpoints
+│   │   │   ├── saasApi.ts         # SaaS product endpoints
+│   │   │   ├── directoriesApi.ts  # Directory endpoints
+│   │   │   ├── submissionsApi.ts  # Submission endpoints
+│   │   │   ├── config.ts          # Axios configuration
+│   │   │   ├── tokenManager.ts    # JWT token handling
+│   │   │   └── index.ts
+│   │   └── utils.ts               # Validation utilities
+│   ├── store/
+│   │   ├── hooks/
+│   │   │   ├── useDashboard.ts    # Dashboard queries
+│   │   │   ├── useDirectories.ts  # Directory CRUD hooks
+│   │   │   ├── useSaasProducts.ts # SaaS product hooks
+│   │   │   └── useSubmissions.ts  # Submission hooks
+│   │   ├── queryKeys.ts           # Query key factory
+│   │   └── index.ts
+│   ├── types/
+│   │   ├── schema.ts              # Zod schemas & types
+│   │   └── models/
+│   │       └── enums.ts
+│   ├── hooks/
+│   │   └── use-toast.ts           # Toast notifications
+│   ├── utils/
+│   │   └── use-debounce.ts        # Debounce hook
+│   ├── lib/
+│   │   └── utils.ts               # Utility functions (cn)
+│   ├── assets/
+│   ├── App.tsx                    # Main app with routing
+│   ├── main.tsx                   # Entry point
+│   └── index.css                  # Global styles + Tailwind
 ├── public/
-├── .env                   # Environment variables
-├── biome.json             # Biome configuration
+├── .env
+├── biome.json                     # Biome linter config
+├── components.json                # shadcn/ui config
 ├── package.json
 ├── tsconfig.json
+├── tsconfig.app.json
+├── tsconfig.node.json
 ├── vite.config.ts
 └── README.md
 ```
 
-## 🎨 Components Overview
+## Main Pages
 
 ### Dashboard
-- Real-time statistics
-- Success rate visualization
-- Recent submissions
-- Pie chart breakdown
+The main overview with stats, recent submissions, and a pie chart showing submission status breakdown.
 
 ### SaaS Manager
-- Add/edit SaaS products
-- Upload logos
-- Manage product details
-- Form validation with Zod
+Where I manage the SaaS products that get submitted to directories. Each product has name, URL, description, category, etc.
 
 ### Directory Manager
-- Add/edit directories
-- **Login credentials** support
-- **Multi-step form** configuration
-- Success rate tracking
+List of all directories I can submit to. Shows success rates and lets me configure login credentials for protected directories.
 
 ### Bulk Submit
-- Select SaaS product
-- Multi-select directories
-- Real-time submission progress
-- Results summary
+The main workflow - select a product, pick directories, and submit. Shows real-time progress.
 
-### Submission List
-- Filter by status
-- Search submissions
-- Retry failed submissions
-- View detailed logs
+### Submissions
+Full list of all submissions with filtering by status. I can retry failed ones from here.
 
-## 🔌 API Integration
+## API Integration
 
-### Environment Variables
-
-Create `.env`:
-
-```env
-VITE_API_URL=http://localhost:8000/api
-```
-
-### API Service
+I use a centralized API service with TanStack Query for data fetching:
 
 ```typescript
-import { api } from '@/services/api';
+// Using the hooks
+const { data: products } = useSaasProducts();
+const { mutate: createProduct } = useCreateSaasProduct();
 
-// Fetch data
+// Direct API calls
+import { api } from '@/services/api/ApiService';
 const products = await api.getSaasProducts();
-
-// Create data
-const product = await api.createSaasProduct(data);
-
-// Update data
-await api.updateSaasProduct(id, data);
 ```
 
-## 🎯 State Management
+## Form Handling
 
-### TanStack Query
-
-All data fetching uses TanStack Query:
+Forms use React Hook Form with Zod validation:
 
 ```typescript
-// Automatic caching & refetching
-const { data, isLoading, error, refetch } = useSaasProducts();
-
-// Mutations with cache invalidation
-const mutation = useCreateSaasProduct();
-await mutation.mutateAsync(data);
-```
-
-**Benefits:**
-- Automatic caching
-- Background refetching
-- Optimistic updates
-- Request deduplication
-
-## ✅ Type Safety
-
-### Zod Schemas
-
-Runtime validation with TypeScript types:
-
-```typescript
-import { SaasProductCreateSchema } from '@/types/schemas';
-
-// Validate at runtime
-const product = SaasProductCreateSchema.parse(formData);
-
-// TypeScript knows the exact shape
-product.name // string
-product.website_url // string (validated URL)
-```
-
-### React Hook Form Integration
-
-```typescript
-const { register, handleSubmit, formState: { errors } } = useForm({
-  resolver: zodResolver(SaasProductCreateSchema)
+const form = useForm({
+  resolver: zodResolver(SaasProductCreateSchema),
+  defaultValues: { name: '', website_url: '' }
 });
-
-// Automatic validation on submit
-<input {...register('name')} />
-{errors.name && <span>{errors.name.message}</span>}
 ```
 
-## 🎨 Styling
+## Styling
 
-### Tailwind CSS
+I use Tailwind CSS with shadcn/ui components. The UI components are in `src/components/ui/` and follow a consistent design.
 
-Utility-first styling:
+## Code Quality
 
-```tsx
-<button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-  Submit
-</button>
-```
-
-### Custom Classes
-
-Defined in `index.css`:
-
-```css
-.btn-primary {
-  @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700;
-}
-
-.card {
-  @apply bg-white rounded-lg shadow p-6;
-}
-```
-
-## 🧹 Code Quality with Biome
-
-### Configuration
-
-`biome.json`:
-
-```json
-{
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "indentWidth": 2
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "double"
-    }
-  }
-}
-```
-
-### Usage
+Biome handles linting and formatting:
 
 ```bash
-# Format all files
-npm run format
-
-# Check formatting
-npm run lint
-
-# Fix auto-fixable issues
-npm run lint:fix
+npm run format   # Format all files
+npm run lint     # Check for issues
 ```
-
-## 🐛 VS Code Integration
-
-### Recommended Extensions
-
-```json
-{
-  "recommendations": [
-    "biomejs.biome",
-    "bradlc.vscode-tailwindcss",
-    "dbaeumer.vscode-eslint"
-  ]
-}
-```
-
-### settings.json
-
-```json
-{
-  "editor.defaultFormatter": "biomejs.biome",
-  "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {
-    "source.organizeImports": "explicit"
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  }
-}
-```
-
-### Debugging
-
-`launch.json`:
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Launch Chrome",
-      "type": "chrome",
-      "request": "launch",
-      "url": "http://localhost:5173",
-      "webRoot": "${workspaceFolder}/src"
-    }
-  ]
-}
-```
-
-## 🧪 Testing
-
-```bash
-# Run tests
-npm test
-
-# Watch mode
-npm test -- --watch
-
-# Coverage
-npm test -- --coverage
-```
-
-## 🏗️ Building
-
-### Development
-
-```bash
-npm run dev
-```
-
-- Hot module replacement
-- Fast refresh
-- Source maps
-
-### Production
-
-```bash
-npm run build
-```
-
-- Minification
-- Tree shaking
-- Code splitting
-- Optimized assets
-
-Output in `dist/`
-
-### Preview
-
-```bash
-npm run preview
-```
-
-Serve production build locally
-
-## 🚀 Deployment
-
-### Vercel
-
-```bash
-npm install -g vercel
-vercel
-```
-
-### Netlify
-
-```bash
-npm run build
-netlify deploy --prod --dir=dist
-```
-
-### Docker
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-CMD ["npm", "run", "preview"]
-```
-
-## 📊 Performance
-
-### Code Splitting
-
-Automatic route-based splitting with React Router
-
-### Lazy Loading
-
-```typescript
-const Dashboard = lazy(() => import('./components/Dashboard'));
-```
-
-### Memoization
-
-```typescript
-const MemoizedComponent = React.memo(SubmissionList);
-
-const stats = useMemo(() => calculateStats(data), [data]);
-```
-
-## 🐛 Troubleshooting
-
-### API not connecting
-
-```env
-# Check .env
-VITE_API_URL=http://localhost:8000/api
-```
-
-### Type errors
-
-```bash
-# Regenerate types
-npm run type-check
-```
-
-### Biome errors
-
-```bash
-# Auto-fix
-npm run lint:fix
-
-# Format code
-npm run format
-```
-
-### Cache issues
-
-```bash
-# Clear cache
-rm -rf node_modules/.vite
-npm run dev
-```
-
-## 🎓 Learning Resources
-
-- [React Docs](https://react.dev/)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-- [TanStack Query](https://tanstack.com/query/latest/docs/react/overview)
-- [Zod Documentation](https://zod.dev/)
-- [Tailwind CSS](https://tailwindcss.com/docs)
-- [Biome](https://biomejs.dev/)
-
-## 🤝 Contributing
-
-1. Fork repository
-2. Create feature branch
-3. Run `npm run lint` and `npm run format`
-4. Run `npm run type-check`
-5. Submit pull request
-
-## 📄 License
-
-Proprietary - All rights reserved
 
 ---
+
+Built as part of the SaaS Directory Submission Agent.

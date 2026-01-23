@@ -1,91 +1,65 @@
 # SaaS Directory Submission Agent
 
-An intelligent, automated system for submitting SaaS products to hundreds of directories using AI-powered form detection and browser automation.
+I built this system to automate submitting SaaS products to hundreds of directories using AI-powered browser automation. The goal is to save countless hours of manual form filling while ensuring accurate submissions.
 
-## 🎯 Features
+## How It Works
 
-- **AI Form Detection**: Automatically detects and understands form fields using GPT-4 Vision or Claude
-- **Browser Automation**: Fills and submits forms using Playwright
-- **Bulk Submissions**: Submit to multiple directories concurrently
-- **Smart Retry Logic**: Automatically retries failed submissions
-- **Dashboard Analytics**: Track submission status and success rates
-- **Form Caching**: Remembers form structures to speed up future submissions
+I use **Browser Use Cloud API** as the primary solution. It's a cloud-based AI agent that can see and interact with web pages like a human would. I simply give it instructions like "fill out this form with my SaaS details" and it handles the rest - finding fields, typing, clicking buttons, even navigating multi-step forms.
 
-## 🏗️ Architecture
+### Why Browser Use Cloud?
 
-### Three-Layer Design
+After testing multiple approaches, I settled on Browser Use Cloud because:
 
-1. **AI Form Reader (Brain)**
-   - Uses vision models to analyze forms
-   - Detects field types, labels, and requirements
-   - Maps SaaS data to form fields intelligently
+- **No local setup required** - Just an API key
+- **Handles complex forms** - Multi-step, dynamic fields, login-protected pages
+- **Low RAM usage** - Everything runs in the cloud
+- **Reliable** - Managed infrastructure means consistent performance
 
-2. **Browser Automation (Hands)**
-   - Playwright-based form filling
-   - Handles text inputs, file uploads, dropdowns
-   - Screenshot capture for verification
-
-3. **Workflow Manager (Control Center)**
-   - Orchestrates submission pipeline
-   - Manages concurrent submissions
-   - Implements retry logic and scheduling
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
 - Python 3.9+
 - Node.js 18+
 - PostgreSQL 14+
-- OpenAI API key (or Anthropic API key)
+- Browser Use Cloud API key (get one at [browseruse.com](https://browseruse.com))
 
 ### Backend Setup
 
 ```bash
-# 1. Navigate to backend directory
 cd backend
 
-# 2. Create virtual environment
+# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux/Mac
 
-# 3. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# 4. Install Playwright browsers
-playwright install chromium
-
-# 5. Create .env file
+# Create .env file with your configuration
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env and add your BROWSER_USE_API_KEY
 
-# 6. Setup database
-createdb directory_agent  # Create PostgreSQL database
-alembic upgrade head      # Run migrations
-
-# 7. Run server
-uvicorn app.main:app --reload
+# Run the server
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 ### Frontend Setup
 
 ```bash
-# 1. Navigate to frontend directory
 cd frontend
 
-# 2. Install dependencies
+# Install dependencies
 npm install
 
-# 3. Create .env file
-echo "VITE_API_URL=http://localhost:8000/api" > .env
-
-# 4. Run development server
+# Run development server
 npm run dev
 ```
 
-## 📝 Configuration
+Visit http://localhost:5173 to access the dashboard.
 
-### Environment Variables (Backend)
+## Configuration
 
 Create `backend/.env`:
 
@@ -93,270 +67,176 @@ Create `backend/.env`:
 # Database
 DATABASE_URL=postgresql://user:password@localhost:5432/directory_agent
 
-# AI Provider (choose one or both)
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
+# Browser Use Cloud (Primary Solution)
+USE_BROWSER_USE_CLOUD=true
+BROWSER_USE_API_KEY=your-api-key-here
 
-# Application
+# Authentication
 SECRET_KEY=your-secret-key-here
-DEBUG=True
-ALLOWED_ORIGINS=["http://localhost:3000", "http://localhost:5173"]
 
-# Browser Automation
-HEADLESS_BROWSER=False  # Set to True in production
+# CORS
+ALLOWED_ORIGINS=http://localhost:5173
+
+# Browser Settings
+HEADLESS_BROWSER=false
 BROWSER_TIMEOUT=30000
-
-# AI Settings
-AI_MODEL=gpt-4-vision-preview
-AI_TEMPERATURE=0.1
 
 # Workflow
 MAX_RETRIES=3
-RETRY_DELAY=300  # 5 minutes
+RETRY_DELAY=300
 CONCURRENT_SUBMISSIONS=3
 ```
 
-## 📊 Database Schema
+## Features
 
-### Tables
+- **AI-Powered Form Detection** - Automatically understands form structure
+- **Browser Automation** - Fills and submits forms using AI vision
+- **Bulk Submissions** - Submit to multiple directories at once
+- **Login Support** - Handles password-protected directories
+- **Multi-Step Forms** - Navigates complex submission wizards
+- **Retry Logic** - Automatically retries failed submissions
+- **Dashboard** - Track submission status and success rates
 
-**saas_products**
-- Product information (name, URL, description, logo, etc.)
+## Alternative: Local Mode with Ollama
 
-**directories**
-- Directory URLs and metadata
-- Cached form structures
-- Success statistics
+I also built a local mode using Ollama for those who want to keep everything on their machine. However, **I couldn't fully move forward with this approach because it requires significant RAM** (16GB+ recommended).
 
-**submissions**
-- Submission records with status tracking
-- Error logs and retry count
-- Detected form fields
+If you have a powerful machine, you can try it:
 
-**form_fields**
-- Detected form field details
-- Used for learning and caching
+1. Run Ollama with GPU support using Docker:
+```bash
+docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
+```
 
-## 🔧 API Endpoints
+2. Pull a vision model:
+```bash
+docker exec -it ollama ollama pull qwen2.5vl:latest
+```
+
+3. Update your `.env`:
+```env
+USE_BROWSER_USE_CLOUD=false
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_MODEL=qwen2.5vl:latest
+```
+
+See [OLLAMA.md](OLLAMA.md) for more details on the local setup.
+
+## Project Structure
+
+```
+.
+├── backend/                          # FastAPI backend
+│   ├── app/
+│   │   ├── main.py                   # Application entry point
+│   │   ├── config.py                 # Configuration settings
+│   │   ├── database.py               # Database setup
+│   │   ├── models.py                 # SQLAlchemy models
+│   │   ├── schemas.py                # Pydantic schemas
+│   │   ├── dependencies.py           # FastAPI dependencies
+│   │   ├── routes/                   # API endpoints
+│   │   │   ├── auth.py               # Authentication
+│   │   │   ├── saas.py               # SaaS products CRUD
+│   │   │   ├── directories.py        # Directories CRUD
+│   │   │   └── submissions.py        # Submissions & bulk submit
+│   │   ├── services/                 # Business logic
+│   │   │   ├── browser_use_service.py    # Browser Use Cloud API
+│   │   │   ├── ai_form_reader.py         # Ollama integration (fallback)
+│   │   │   ├── browser_automation.py     # Playwright automation
+│   │   │   ├── browser_manager.py        # Browser session management
+│   │   │   ├── form_filler.py            # Form filling logic
+│   │   │   ├── login_handler.py          # Directory login handling
+│   │   │   ├── url_submission.py         # URL submission patterns
+│   │   │   ├── workflow_manager.py       # Orchestration
+│   │   │   └── strategies/
+│   │   │       ├── browser_use_strategy.py   # Cloud strategy (primary)
+│   │   │       └── playwright_strategy.py    # Local strategy (fallback)
+│   │   └── utils/
+│   │       ├── auth.py               # Encryption utilities
+│   │       └── logger.py             # Logging setup
+│   ├── uploads/                      # Generated screenshots
+│   ├── requirements.txt
+│   └── README.md
+│
+├── frontend/                         # React frontend
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── ui/                   # shadcn/ui components
+│   │   │   ├── layout/               # Layout & navigation
+│   │   │   ├── dashboard/            # Dashboard components
+│   │   │   ├── submissions/          # Submission list & details
+│   │   │   ├── bulk-submit/          # Bulk submission workflow
+│   │   │   ├── saas/                 # SaaS product management
+│   │   │   └── directories/          # Directory management
+│   │   ├── contexts/                 # React contexts (Auth, Modal)
+│   │   ├── pages/                    # Login & Register pages
+│   │   ├── services/api/             # API client & endpoints
+│   │   ├── store/hooks/              # TanStack Query hooks
+│   │   ├── types/                    # TypeScript types & Zod schemas
+│   │   ├── App.tsx                   # Main app with routing
+│   │   └── main.tsx                  # Entry point
+│   ├── package.json
+│   └── README.md
+│
+├── OLLAMA.md                         # Local AI setup guide
+└── README.md                         # This file
+```
+
+## API Endpoints
 
 ### SaaS Products
-- `POST /api/saas` - Create SaaS product
+- `POST /api/saas` - Create a SaaS product
 - `GET /api/saas` - List all products
-- `GET /api/saas/{id}` - Get product details
-- `PUT /api/saas/{id}` - Update product
-- `DELETE /api/saas/{id}` - Delete product
+- `PUT /api/saas/{id}` - Update a product
+- `DELETE /api/saas/{id}` - Delete a product
 
 ### Directories
-- `POST /api/directories` - Add directory
+- `POST /api/directories` - Add a directory
 - `GET /api/directories` - List directories
-- `GET /api/directories/{id}` - Get directory details
 - `PUT /api/directories/{id}` - Update directory
 - `DELETE /api/directories/{id}` - Delete directory
 
 ### Submissions
 - `POST /api/submissions` - Create single submission
 - `POST /api/submissions/bulk` - Bulk submit
-- `GET /api/submissions` - List submissions (with filters)
-- `GET /api/submissions/stats` - Dashboard statistics
+- `GET /api/submissions` - List submissions
 - `POST /api/submissions/{id}/retry` - Retry failed submission
 
-## 💡 Usage Examples
+## Tech Stack
 
-### 1. Add a SaaS Product
+### Backend
+- FastAPI - API framework
+- SQLAlchemy - ORM
+- Browser Use SDK - AI browser automation
+- PostgreSQL - Database
 
+### Frontend
+- React 19 - UI framework
+- Vite - Build tool
+- Tailwind CSS - Styling
+- React Query - Data fetching
+
+## Troubleshooting
+
+### Browser Use API errors
+- Verify your API key is correct in `.env`
+- Check your account has available credits
+
+### Database connection errors
 ```bash
-curl -X POST http://localhost:8000/api/saas \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "MyAwesomeSaaS",
-    "website_url": "https://myawesomesaas.com",
-    "description": "A revolutionary SaaS platform...",
-    "short_description": "Revolutionary SaaS",
-    "category": "Productivity",
-    "contact_email": "hello@myawesomesaas.com",
-    "logo_url": "https://myawesomesaas.com/logo.png"
-  }'
-```
-
-### 2. Add Directories
-
-```bash
-curl -X POST http://localhost:8000/api/directories \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Product Hunt",
-    "url": "https://www.producthunt.com",
-    "submission_url": "https://www.producthunt.com/posts/new",
-    "status": "active",
-    "domain_authority": 92
-  }'
-```
-
-### 3. Bulk Submit
-
-```bash
-curl -X POST http://localhost:8000/api/submissions/bulk \
-  -H "Content-Type: application/json" \
-  -d '{
-    "saas_product_id": 1,
-    "directory_ids": [1, 2, 3, 4, 5]
-  }'
-```
-
-## 🎨 Frontend Components
-
-### Dashboard
-- Real-time statistics
-- Success rate visualization
-- Recent submissions list
-- Pie chart of submission statuses
-
-### Submissions List
-- Filterable table of all submissions
-- Status badges and icons
-- Retry failed submissions
-- View detailed logs
-
-### Bulk Submit
-- Select SaaS product
-- Multi-select directories
-- Real-time submission progress
-- Batch result summary
-
-### SaaS Manager
-- Add/edit SaaS products
-- Upload logos
-- Manage product details
-
-### Directory Manager
-- Add/edit directories
-- Track success rates
-- View form cache status
-
-## 🧪 Testing
-
-### Backend Tests
-
-```bash
-cd backend
-pytest tests/ -v
-```
-
-### Frontend Tests
-
-```bash
-cd frontend
-npm run test
-```
-
-## 📈 Performance Tips
-
-1. **Use Form Caching**: Once a form is analyzed, its structure is cached
-2. **Adjust Concurrency**: Set `CONCURRENT_SUBMISSIONS` based on your system
-3. **Headless Mode**: Enable `HEADLESS_BROWSER=True` in production
-4. **Database Indexes**: Ensure indexes on frequently queried fields
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Issue**: Playwright browser not found
-```bash
-playwright install chromium
-```
-
-**Issue**: Database connection error
-```bash
-# Check PostgreSQL is running
+# Ensure PostgreSQL is running
 pg_isready
 
 # Verify DATABASE_URL in .env
 ```
 
-**Issue**: AI API errors
-```bash
-# Verify API keys in .env
-# Check API key permissions and billing
-```
+### Form submission failures
+- Check the submission logs in the dashboard
+- Some directories may have CAPTCHAs or rate limits
+- Try reducing `CONCURRENT_SUBMISSIONS`
 
-**Issue**: Form detection failures
-- Try different AI models (GPT-4 vs Claude)
-- Check screenshot quality
-- Manually add form structure to directory cache
+## Future Plans
 
-## 🔒 Security Considerations
-
-- Store API keys in environment variables only
-- Use HTTPS in production
-- Implement rate limiting on API endpoints
-- Validate all user inputs
-- Sanitize URLs before visiting
-- Use secure database credentials
-
-## 🚢 Deployment
-
-### Using Docker (Recommended)
-
-```dockerfile
-# Dockerfile for backend
-FROM python:3.9-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-RUN playwright install chromium
-COPY . .
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-### Cloud Deployment Options
-
-- **Backend**: Railway, Render, AWS EC2, Google Cloud Run
-- **Frontend**: Vercel, Netlify, AWS Amplify
-- **Database**: Supabase, AWS RDS, Digital Ocean Managed Database
-
-## 📚 Tech Stack
-
-### Backend
-- FastAPI - Web framework
-- SQLAlchemy - ORM
-- Playwright - Browser automation
-- OpenAI/Anthropic - AI form detection
-- PostgreSQL - Database
-- Alembic - Database migrations
-
-### Frontend
-- React 18 - UI library
-- Vite - Build tool
-- Tailwind CSS - Styling
-- Axios - HTTP client
-- Recharts - Data visualization
-- Lucide React - Icons
-
-## 🤝 Contributing
-
-This is an assessment project. After completion, contributions may be accepted.
-
-## 📄 License
-
-Proprietary - GenieOps
-
-## 🙋 Support
-
-For questions or issues:
-- Email: support@genie-ops.com
-- Documentation: https://docs.genie-ops.com
-
-## ✨ Future Enhancements
-
-- [ ] CAPTCHA solving integration
-- [ ] Multi-step form support
-- [ ] Email verification automation
-- [ ] Social media auto-posting
-- [ ] Analytics and SEO tracking
 - [ ] Webhook notifications
-- [ ] Team collaboration features
-- [ ] Custom form field mapping rules
+- [ ] Analytics and reporting
 
----
-
-Built with ❤️ for GenieOps Assessment

@@ -1,85 +1,59 @@
 # SaaS Directory Agent - Backend
 
-AI-powered automated SaaS directory submission system with persistent browser sessions, login support, and multi-step form handling.
+This is the backend service I built for automating SaaS directory submissions. It uses AI-powered browser automation to fill out and submit forms across hundreds of directories.
 
-## 🚀 Features
+## My Current Solution: Browser Use Cloud API
 
-- ✅ **Ollama AI Integration** - Free local AI with Mistral for form analysis
-- ✅ **Persistent Browser Sessions** - Maintains login credentials across submissions
-- ✅ **Multi-Step Form Support** - Handles Next/Continue buttons automatically
-- ✅ **Login Credential Management** - Securely stores and uses directory credentials
-- ✅ **Concurrent Submissions** - Process multiple directories simultaneously
-- ✅ **Automatic Retries** - Smart retry logic for failed submissions
-- ✅ **Form Caching** - Remembers form structures to speed up future submissions
+I'm using **Browser Use Cloud** as the primary submission engine. It's a cloud-based service where an AI agent can see web pages and interact with them like a human. I just send it instructions and it handles the form filling, button clicking, and navigation.
 
-## 📋 Prerequisites
+### Why I chose this approach:
 
-- Python 3.9+
-- PostgreSQL 14+
-- Ollama with Mistral model
-- Windows/Linux/Mac
+- **No heavy local setup** - I don't need to run AI models locally
+- **Low memory footprint** - My machine doesn't need 16GB+ RAM
+- **Handles complex scenarios** - Login pages, multi-step forms, dynamic fields
+- **Reliable** - The infrastructure is managed for me
 
-## 🔧 Installation
-
-### 1. Install Ollama
-
-**Windows:**
-```powershell
-# Download from: https://ollama.com/download
-# Install and run
-ollama pull mistral:latest
-```
-
-**Linux/Mac:**
-```bash
-curl https://ollama.ai/install.sh | sh
-ollama pull mistral:latest
-```
-
-### 2. Setup Backend
+## Installation
 
 ```bash
 cd backend
 
 # Create virtual environment
 python -m venv venv
-
-# Activate (Windows)
-venv\Scripts\activate
-
-# Activate (Linux/Mac)
-source venv/bin/activate
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux/Mac
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Install Playwright browsers
+# Install Playwright browsers (for fallback local mode)
 playwright install chromium
 ```
 
-### 3. Configure Environment
+## Configuration
 
-Create `.env` file:
+Create a `.env` file:
 
 ```env
 # Database
 DATABASE_URL=postgresql://postgres:password@localhost:5432/directory_agent
 
-# Ollama
-OLLAMA_HOST=http://localhost:11434
-OLLAMA_MODEL=mistral:latest
+# Browser Use Cloud (my primary solution)
+USE_BROWSER_USE_CLOUD=true
+USE_BROWSER_USE=true
+BROWSER_USE_API_KEY=your-api-key-here
 
-# Security (generate: python -c "import secrets; print(secrets.token_urlsafe(32))")
-SECRET_KEY=your-generated-secret-key-here
+# Security
+SECRET_KEY=your-secret-key
 
 # CORS
 ALLOWED_ORIGINS=http://localhost:5173
 
-# Browser
+# Browser Settings
 HEADLESS_BROWSER=false
 BROWSER_TIMEOUT=30000
 
-# AI
+# AI Settings (for local mode fallback)
 AI_TEMPERATURE=0.1
 MAX_TOKENS=4096
 
@@ -93,82 +67,113 @@ HOST=0.0.0.0
 PORT=8000
 ```
 
-### 4. Setup Database
+## Running the Server
 
 ```bash
-# Create database
-psql -U postgres -c "CREATE DATABASE directory_agent;"
-
-# Initialize tables (automatic on first run)
-python -m app.main
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-## 🏃 Running
+API docs available at: http://localhost:8000/docs
 
-### Development
-
-```bash
-# VS Code: Press F5 or use Run & Debug
-# Or manually:
-uvicorn app.main:app --reload
-```
-
-Visit http://localhost:8000/docs for API documentation
-
-### Production
-
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
-```
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 backend/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py                 # FastAPI application
-│   ├── config.py               # Configuration
-│   ├── database.py             # Database setup
-│   ├── models.py               # SQLAlchemy models
-│   ├── schemas.py              # Pydantic schemas
-│   ├── routes/                 # API endpoints
-│   │   ├── saas.py
-│   │   ├── directories.py
-│   │   └── submissions.py
-│   ├── services/               # Core business logic
-│   │   ├── ai_form_reader.py  # Ollama integration
-│   │   ├── browser_automation.py  # Playwright automation
-│   │   └── workflow_manager.py    # Workflow orchestration
+│   ├── main.py                       # FastAPI application entry
+│   ├── config.py                     # Settings & configuration
+│   ├── database.py                   # Database connection
+│   ├── models.py                     # SQLAlchemy ORM models
+│   ├── schemas.py                    # Pydantic request/response schemas
+│   ├── dependencies.py               # FastAPI dependency injection
+│   ├── routes/                       # API endpoint handlers
+│   │   ├── auth.py                   # Authentication (login, register)
+│   │   ├── saas.py                   # SaaS products CRUD
+│   │   ├── directories.py            # Directories CRUD
+│   │   └── submissions.py            # Submissions & bulk operations
+│   ├── services/                     # Core business logic
+│   │   ├── browser_use_service.py    # Browser Use Cloud API (primary)
+│   │   ├── ai_form_reader.py         # Ollama form detection (fallback)
+│   │   ├── browser_automation.py     # Playwright browser control
+│   │   ├── browser_manager.py        # Browser session management
+│   │   ├── form_filler.py            # Form field filling logic
+│   │   ├── login_handler.py          # Directory login automation
+│   │   ├── url_submission.py         # URL submission patterns
+│   │   ├── workflow_manager.py       # Submission orchestration
+│   │   └── strategies/
+│   │       ├── browser_use_strategy.py   # Cloud API strategy
+│   │       └── playwright_strategy.py    # Local Playwright strategy
 │   └── utils/
-│       └── logger.py
-├── uploads/                    # Generated files
-│   └── screenshots/
-├── .env                        # Environment variables
-├── requirements.txt            # Python dependencies
-└── README.md                   # This file
+│       ├── auth.py                   # Password encryption
+│       └── logger.py                 # Colored logging setup
+├── uploads/
+│   └── screenshots/                  # Form screenshots
+├── .env                              # Environment variables
+├── requirements.txt                  # Python dependencies
+└── README.md
 ```
 
-## 🎯 Key Features Explained
+## How Submissions Work
 
-### 1. Persistent Browser Sessions
+I built two strategies for form submission:
 
-The browser maintains context across submissions:
-- Cookies and session data preserved
-- No need to re-login for each submission
-- Faster subsequent submissions
+### 1. Browser Use Strategy (Primary)
 
-```python
-# Browser context is reused
-async with BrowserAutomation() as browser:
-    await browser.login_if_required(...)
-    # Context persists for all submissions
-    await browser.fill_and_submit_form(...)
+This is what I'm using now. The flow:
+
+1. I send the form URL and SaaS product data to Browser Use Cloud
+2. The AI agent navigates to the page
+3. It identifies form fields using vision
+4. It fills in the data and submits
+5. I get back a success/failure result
+
+### 2. Playwright Strategy (Fallback)
+
+If you disable cloud mode, it falls back to local Playwright automation with Ollama for form detection. I couldn't fully go this route because my machine doesn't have enough RAM for the AI models.
+
+## API Endpoints
+
+### Authentication
+```
+POST /api/auth/register    # Register user
+POST /api/auth/login       # Login
+POST /api/auth/logout      # Logout
+GET  /api/auth/me          # Current user
 ```
 
-### 2. Login Credentials
+### SaaS Products
+```
+GET    /api/saas           # List products
+POST   /api/saas           # Create product
+GET    /api/saas/{id}      # Get product
+PUT    /api/saas/{id}      # Update product
+DELETE /api/saas/{id}      # Delete product
+```
 
-Directories can require authentication:
+### Directories
+```
+GET    /api/directories           # List directories
+POST   /api/directories           # Create directory
+GET    /api/directories/{id}      # Get directory
+PUT    /api/directories/{id}      # Update directory
+DELETE /api/directories/{id}      # Delete directory
+```
+
+### Submissions
+```
+GET    /api/submissions           # List submissions
+POST   /api/submissions           # Create submission
+POST   /api/submissions/bulk      # Bulk submit
+GET    /api/submissions/stats     # Dashboard stats
+POST   /api/submissions/{id}/retry # Retry failed
+```
+
+## Key Features I Implemented
+
+### Login Support
+
+Directories that require login work too:
 
 ```python
 directory = Directory(
@@ -180,237 +185,96 @@ directory = Directory(
 )
 ```
 
-### 3. Multi-Step Forms
+### Multi-Step Forms
 
-Handles forms with Next/Continue buttons:
+I handle forms with Next/Continue buttons:
 
 ```python
 directory = Directory(
     name="Complex Directory",
     is_multi_step=True,
-    step_count=3  # Number of steps
+    step_count=3
 )
 ```
 
-The system automatically:
-1. Fills fields for step 1
-2. Clicks "Next"
-3. Fills fields for step 2
-4. Clicks "Next"
-5. Fills fields for step 3
-6. Clicks "Submit"
+### Concurrent Submissions
 
-### 4. Ollama AI Integration
-
-Uses local Mistral model for form analysis:
+I can submit to multiple directories at once:
 
 ```python
-# Automatically detects form fields
-form_structure = await ai_reader.analyze_form_from_screenshot(
-    screenshot_path="form.png",
-    html_content="<form>...</form>"
+await workflow.bulk_submit(
+    saas_product_id=1,
+    directory_ids=[1, 2, 3, 4, 5],
+    user_id=1
 )
 ```
 
-## 🔌 API Endpoints
+## Alternative: Local Mode with Ollama
 
-### SaaS Products
-
-```
-GET    /api/saas              # List all products
-POST   /api/saas              # Create product
-GET    /api/saas/{id}         # Get product
-PUT    /api/saas/{id}         # Update product
-DELETE /api/saas/{id}         # Delete product
-```
-
-### Directories
-
-```
-GET    /api/directories       # List all directories
-POST   /api/directories       # Create directory
-GET    /api/directories/{id}  # Get directory
-PUT    /api/directories/{id}  # Update directory
-DELETE /api/directories/{id}  # Delete directory
-```
-
-### Submissions
-
-```
-GET    /api/submissions       # List submissions
-POST   /api/submissions       # Create submission
-POST   /api/submissions/bulk  # Bulk submit
-GET    /api/submissions/stats # Dashboard stats
-POST   /api/submissions/{id}/retry  # Retry failed
-```
-
-## 🐛 VS Code Debugging
-
-### launch.json
-
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "FastAPI",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "uvicorn",
-      "args": [
-        "app.main:app",
-        "--reload",
-        "--host",
-        "0.0.0.0",
-        "--port",
-        "8000"
-      ],
-      "jinja": true,
-      "justMyCode": false,
-      "env": {
-        "PYTHONPATH": "${workspaceFolder}"
-      }
-    }
-  ]
-}
-```
-
-### settings.json
-
-```json
-{
-  "python.defaultInterpreterPath": "${workspaceFolder}/venv/Scripts/python.exe",
-  "python.linting.enabled": true,
-  "python.linting.pylintEnabled": false,
-  "python.linting.flake8Enabled": true,
-  "python.formatting.provider": "black"
-}
-```
-
-## 🧪 Testing
+If you have a machine with 16GB+ RAM and a decent GPU, you can try the local mode. I set up Ollama with Docker to use GPU:
 
 ```bash
-# Run tests
-pytest tests/ -v
-
-# With coverage
-pytest tests/ --cov=app --cov-report=html
+docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
 ```
 
-## 🔒 Security Notes
-
-### ⚠️ Important: Production Deployment
-
-**Login credentials are stored in plain text in development.**
-
-For production:
-
-1. **Encrypt passwords:**
-```python
-from cryptography.fernet import Fernet
-
-# Generate key
-key = Fernet.generate_key()
-
-# Encrypt password
-cipher = Fernet(key)
-encrypted = cipher.encrypt(password.encode())
-```
-
-2. **Use environment variables for sensitive data**
-3. **Enable HTTPS**
-4. **Set HEADLESS_BROWSER=true**
-
-## 🐛 Troubleshooting
-
-### Ollama not connecting
-
+Then pull a model:
 ```bash
-# Check Ollama is running
-ollama list
-
-# Start Ollama
-ollama serve
+docker exec -it ollama ollama pull qwen2.5vl:latest
 ```
+
+Update `.env`:
+```env
+USE_BROWSER_USE_CLOUD=false
+USE_BROWSER_USE=false
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_MODEL=qwen2.5vl:latest
+```
+
+I couldn't continue with this approach because it requires too much RAM for my setup, but the code is there if you want to try it.
+
+## Troubleshooting
+
+### Browser Use API errors
+- Check your API key in `.env`
+- Verify your account has credits
 
 ### Database connection failed
-
 ```bash
 # Check PostgreSQL is running
 pg_isready
 
-# Verify connection
+# Test connection
 psql -U postgres -d directory_agent
 ```
 
 ### Playwright browser not found
-
 ```bash
 playwright install chromium --force
 ```
 
-### Import errors
+### High memory usage (local mode)
+This is why I moved to cloud mode. If you want to use local mode:
+- Close other applications
+- Use a smaller model
+- Consider using GPU acceleration
 
-```bash
-# Ensure virtual environment is activated
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/Mac
-
-# Reinstall dependencies
-pip install -r requirements.txt
-```
-
-## 📊 Performance
-
-- **Concurrent submissions:** 3 (configurable)
-- **Retry delay:** 5 minutes
-- **Max retries:** 3
-- **Browser timeout:** 30 seconds
-
-## 🔄 Database Migrations
-
-```bash
-# Create migration
-alembic revision --autogenerate -m "description"
-
-# Apply migrations
-alembic upgrade head
-
-# Rollback
-alembic downgrade -1
-```
-
-## 📝 Code Quality
+## Code Quality
 
 ```bash
 # Format code
 ruff format .
 
-# Lint code
+# Lint
 ruff check .
 
 # Type checking
 mypy app/
 ```
 
-## 🤝 Contributing
+## Debugging in VS Code
 
-1. Fork the repository
-2. Create feature branch
-3. Make changes
-4. Run tests
-5. Submit pull request
-
-## 📄 License
-
-Proprietary - All rights reserved
-
-## 🆘 Support
-
-- Documentation: http://localhost:8000/docs
-- Issues: Report in GitHub
-- Logs: Check console output
+I included VS Code launch configurations. Just press F5 to start debugging.
 
 ---
 
-**Happy submitting! 🚀**
+Built for automating the tedious work of SaaS directory submissions.

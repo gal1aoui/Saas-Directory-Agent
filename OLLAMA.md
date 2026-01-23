@@ -1,394 +1,161 @@
-# 🦙 Ollama Setup Guide - FREE Local AI with Mistral
+# Local AI Mode with Ollama
 
-## Why Ollama + Mistral?
+This is an alternative approach I explored for running the AI form detection locally instead of using Browser Use Cloud. I couldn't fully move forward with this because **it requires significant RAM (16GB+)** and a decent GPU for reasonable performance.
 
-✅ **100% FREE** - No API costs, unlimited usage
-✅ **Privacy First** - All data stays on your machine
-✅ **Works Offline** - No internet required after setup
-✅ **Fast Processing** - Local execution, no network latency
-✅ **Mistral Model** - Excellent for text + form analysis
+## Why I Didn't Go This Route
 
-## 🚀 Quick Setup
+After testing, I found that:
 
-### Step 1: Install Ollama
+- **High RAM usage** - Vision models like Qwen2.5-VL need 8-16GB+ RAM
+- **Slow on CPU** - Without a GPU, inference takes too long
+- **Complex setup** - Need to configure Ollama, pull models, handle GPU drivers
+
+I switched to Browser Use Cloud API instead, which handles all the heavy lifting in the cloud.
+
+## If You Want To Try It Anyway
+
+If you have a powerful machine (16GB+ RAM, NVIDIA GPU), here's how to set it up.
+
+### Option 1: Docker with GPU (Recommended)
+
+I used this command to run Ollama with GPU support:
+
+```bash
+docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
+```
+
+This forces Ollama to use the GPU via Docker's NVIDIA runtime.
+
+### Option 2: Native Installation
 
 **Windows:**
 ```powershell
-# Download installer
-# Visit: https://ollama.com/download/windows
-# Run the installer
-# Ollama starts automatically
+# Download from: https://ollama.com/download/windows
+# Install and run
+ollama pull qwen2.5vl:latest
 ```
 
 **Linux:**
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
+ollama pull qwen2.5vl:latest
 ```
 
 **Mac:**
 ```bash
-# Download from: https://ollama.com/download/mac
-# Or use Homebrew
 brew install ollama
+ollama pull qwen2.5vl:latest
 ```
 
-**Verify Installation:**
-```bash
-ollama --version
-```
+### Pull a Vision Model
 
-### Step 2: Download Mistral Model
+For form detection, you need a vision-capable model:
 
 ```bash
-# Pull Mistral (latest version)
-ollama pull mistral:latest
+# Using Docker
+docker exec -it ollama ollama pull qwen2.5vl:latest
 
-# This downloads ~4GB - may take a few minutes
-# Verify download
-ollama list
+# Native
+ollama pull qwen2.5vl:latest
 ```
 
-You should see:
-```
-NAME              SIZE      MODIFIED
-mistral:latest    6 GB    2 minutes ago
-```
-
-### Step 3: Test Ollama
-
-```bash
-# Test text generation
-ollama run mistral "Hello, how are you?"
-
-# You should see a response
-```
-
-**Done!** ✅ Ollama with Mistral is ready
-
-## 🎯 Configure Backend
+### Configuration
 
 Update `backend/.env`:
 
 ```env
-# Ollama Configuration
+# Disable cloud mode
+USE_BROWSER_USE_CLOUD=false
+USE_BROWSER_USE=false
+
+# Ollama settings
 OLLAMA_HOST=http://localhost:11434
-OLLAMA_MODEL=mistral:latest
+OLLAMA_MODEL=qwen2.5vl:latest
 
-# No API keys needed!
+# AI settings
+AI_TEMPERATURE=0.1
+MAX_TOKENS=4096
 ```
 
-## 🧪 Testing
+### Testing
 
-### Check Ollama is Running
-
-```bash
-# Windows PowerShell
-Get-Process ollama
-
-# Linux/Mac
-ps aux | grep ollama
-```
-
-If not running:
-```bash
-ollama serve
-```
-
-### Test API Endpoint
+Check Ollama is running:
 
 ```bash
 curl http://localhost:11434/api/tags
 ```
 
-Should return list of installed models.
-
-## 📊 Model Comparison
-
-| Model | Size | Speed | Best For |
-|-------|------|-------|----------|
-| `mistral:latest` | ~4GB | Fast | **Our Choice** - Great balance |
-| `mistral:7b` | ~4GB | Fast | Same as latest |
-| `llama2` | ~4GB | Medium | Alternative option |
-| `codellama` | ~4GB | Medium | Code-focused tasks |
-
-**Why Mistral?**
-- Excellent text understanding
-- Fast inference
-- Good at structured output
-- Works great for form analysis
-
-## 🔧 Advanced Configuration
-
-### Use Different Model
+Test the model:
 
 ```bash
-# Pull alternative model
-ollama pull llama2:latest
+# Docker
+docker exec -it ollama ollama run qwen2.5vl:latest "Hello!"
 
-# Update .env
-OLLAMA_MODEL=llama2:latest
+# Native
+ollama run qwen2.5vl:latest "Hello!"
 ```
 
-### Adjust Performance
-
-```env
-# In .env
-AI_TEMPERATURE=0.0      # More deterministic (0.0-1.0)
-MAX_TOKENS=8192        # Larger context window
-```
-
-### Custom Ollama Host
-
-```bash
-# Start Ollama on different port
-OLLAMA_HOST=0.0.0.0:12345 ollama serve
-```
-
-Update `.env`:
-```env
-OLLAMA_HOST=http://localhost:12345
-```
-
-## 🐛 Troubleshooting
-
-### ❌ "Failed to connect to Ollama"
-
-**Check if Ollama is running:**
-```bash
-# Windows
-Get-Process ollama
-
-# Linux/Mac
-pgrep ollama
-```
-
-**Start Ollama:**
-```bash
-ollama serve
-```
-
-**Test connection:**
-```bash
-curl http://localhost:11434/api/version
-```
-
----
-
-### ❌ "Model not found"
-
-**List installed models:**
-```bash
-ollama list
-```
-
-**Pull Mistral:**
-```bash
-ollama pull mistral:latest
-```
-
-**Verify in .env:**
-```env
-OLLAMA_MODEL=mistral:latest
-```
-
----
-
-### ❌ "Out of memory"
-
-**Solution 1: Close other apps**
-- Free up RAM
-- Close browser tabs
-- Stop other services
-
-**Solution 2: Use smaller model**
-```bash
-# Try smaller version
-ollama pull mistral:7b-text-q4_0
-```
-
-**Solution 3: Increase swap (Linux)**
-```bash
-sudo fallocate -l 8G /swapfile
-sudo chmod 600 /swapfile
-sudo mkswap /swapfile
-sudo swapon /swapfile
-```
-
----
-
-### ❌ Slow responses
-
-**Check resource usage:**
-- Open Task Manager (Windows) or Activity Monitor (Mac)
-- Look at CPU/RAM usage
-- Close unnecessary applications
-
-**Enable GPU acceleration (NVIDIA only):**
-1. Install CUDA Toolkit
-2. Restart Ollama
-3. It will auto-detect GPU
-
-**Verify GPU usage:**
-```bash
-nvidia-smi  # Should show ollama process
-```
-
----
-
-## 💡 Tips & Tricks
-
-### 1. Auto-start Ollama (Windows)
-
-```powershell
-# Create startup shortcut
-# 1. Press Win+R
-# 2. Type: shell:startup
-# 3. Create shortcut to Ollama
-```
-
-### 2. Monitor Ollama
-
-```bash
-# Check running models
-ollama ps
-
-# View logs (Linux/Mac)
-journalctl -u ollama -f
-```
-
-### 3. Update Ollama
-
-**Windows:**
-- Download latest installer
-- Run to update
-
-**Linux/Mac:**
-```bash
-curl -fsSL https://ollama.com/install.sh | sh
-```
-
-### 4. Update Models
-
-```bash
-# Update Mistral to latest
-ollama pull mistral:latest
-
-# Remove old versions
-ollama rm mistral:old-version
-```
-
-## 🆚 Ollama vs Cloud AI
-
-| Feature | Ollama (Mistral) | OpenAI GPT-4 |
-|---------|------------------|--------------|
-| **Cost** | ✅ FREE | ❌ $0.01-0.03/request |
-| **Privacy** | ✅ 100% local | ❌ Sent to cloud |
-| **Speed** | ✅ Fast (local) | ⚠️ Network dependent |
-| **Rate Limits** | ✅ None | ❌ Yes |
-| **Internet** | ✅ Works offline | ❌ Requires internet |
-| **Quality** | ✅ Very good | ✅ Excellent |
-| **Setup** | ⚠️ Installation needed | ✅ Just API key |
-
-**For this project: Ollama is perfect!** ✅
-
-## 📊 System Requirements
+## System Requirements
 
 ### Minimum
-- **CPU:** Any modern processor
-- **RAM:** 8GB
-- **Storage:** 5GB free
-- **OS:** Windows 10+, macOS 12+, Linux
+- **RAM:** 16GB
+- **Storage:** 10GB free
+- **GPU:** Optional but recommended
 
 ### Recommended
-- **CPU:** 4+ cores
-- **RAM:** 16GB+
-- **Storage:** 10GB+ free
-- **GPU:** NVIDIA with CUDA (optional)
+- **RAM:** 32GB+
+- **GPU:** NVIDIA with 8GB+ VRAM
+- **Storage:** 20GB+ free
 
-## 🎓 Ollama Commands Reference
+## Model Options
 
+| Model | Size | RAM Needed | Notes |
+|-------|------|------------|-------|
+| `qwen2.5vl:latest` | ~4GB | 8GB+ | Vision model, my choice for forms |
+| `llava` | ~4GB | 8GB+ | Alternative vision model |
+| `llava:13b` | ~8GB | 16GB+ | Better accuracy, slower |
+| `mistral` | ~4GB | 8GB+ | Text only, no vision |
+
+## Troubleshooting
+
+### "Out of memory" errors
+- Close other applications
+- Use a smaller model variant
+- Add swap space (Linux)
+
+### Slow responses
+- Ensure GPU is being used: `nvidia-smi`
+- Check for thermal throttling
+- Consider using the cloud API instead
+
+### Docker GPU not working
+```bash
+# Check NVIDIA Docker runtime is installed
+docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi
+
+# If it fails, install nvidia-container-toolkit
+```
+
+### Model not found
 ```bash
 # List installed models
-ollama list
+docker exec -it ollama ollama list
 
-# Pull a model
-ollama pull mistral:latest
-
-# Run interactive chat
-ollama run mistral
-
-# Remove a model
-ollama rm mistral:old
-
-# Show model info
-ollama show mistral
-
-# Check version
-ollama --version
-
-# Start server
-ollama serve
-
-# Stop server (Ctrl+C)
+# Pull the model
+docker exec -it ollama ollama pull qwen2.5vl:latest
 ```
 
-## 🔐 Security Notes
+## My Recommendation
 
-- Ollama runs locally - your data never leaves your machine
-- No API keys to manage
-- No external dependencies once model is downloaded
-- Perfect for sensitive data processing
+Unless you have a high-end machine, I'd recommend using the **Browser Use Cloud API** instead:
 
-## ✅ Integration Checklist
+- No local resources needed
+- Works on any machine
+- More reliable results
+- Just needs an API key
 
-Before running the app:
-
-- [ ] Ollama installed
-- [ ] Mistral model downloaded (`ollama pull mistral:latest`)
-- [ ] Ollama is running (`ollama serve` or auto-started)
-- [ ] Backend `.env` configured with Ollama settings
-- [ ] Test connection: `curl http://localhost:11434/api/tags`
-
-## 🚀 Ready to Go!
-
-```bash
-# Backend
-cd backend
-uvicorn app.main:app --reload
-
-# You should see:
-# 🤖 AI: Ollama (mistral:latest)
-# ✅ Application started successfully
-```
-
-## 🆘 Getting Help
-
-**Check logs:**
-```bash
-# Backend logs
-# Look in terminal running uvicorn
-
-# Ollama logs (Linux/Mac)
-journalctl -u ollama -n 100
-```
-
-**Common issues:**
-1. Ollama not running → `ollama serve`
-2. Model not found → `ollama pull mistral:latest`
-3. Out of memory → Close other apps
-4. Slow → Check CPU/RAM usage
-
-**Resources:**
-- Ollama Docs: https://github.com/ollama/ollama
-- Mistral AI: https://docs.mistral.ai/
-- Our Issues: Check backend console
+Set `USE_BROWSER_USE_CLOUD=true` in your `.env` and you're good to go.
 
 ---
 
-## 🎉 Congratulations!
-
-You now have a **completely FREE**, **privacy-focused** AI system running locally on your machine!
-
-**No API costs. No rate limits. No cloud dependencies.** 🦙✨
-
-**Happy submitting! 🚀**
+This guide is here for those who want to experiment with local AI, but my production setup uses the cloud API.
