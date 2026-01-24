@@ -22,7 +22,7 @@ After testing multiple approaches, I settled on Browser Use Cloud because:
 - Python 3.9+
 - Node.js 18+
 - PostgreSQL 14+
-- Browser Use Cloud API key (get one at [browseruse.com](https://browseruse.com))
+- Browser Use Cloud API key (get one at [cloud.browser-use.com](https://cloud.browser-use.com/))
 
 ### Backend Setup
 
@@ -104,16 +104,19 @@ I also built a local mode using Ollama for those who want to keep everything on 
 If you have a powerful machine, you can try it:
 
 1. Run Ollama with GPU support using Docker:
+
 ```bash
 docker run -d --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama ollama/ollama
 ```
 
 2. Pull a vision model:
+
 ```bash
 docker exec -it ollama ollama pull qwen2.5vl:latest
 ```
 
 3. Update your `.env`:
+
 ```env
 USE_BROWSER_USE_CLOUD=false
 OLLAMA_HOST=http://localhost:11434
@@ -185,18 +188,21 @@ See [OLLAMA.md](OLLAMA.md) for more details on the local setup.
 ## API Endpoints
 
 ### SaaS Products
+
 - `POST /api/saas` - Create a SaaS product
 - `GET /api/saas` - List all products
 - `PUT /api/saas/{id}` - Update a product
 - `DELETE /api/saas/{id}` - Delete a product
 
 ### Directories
+
 - `POST /api/directories` - Add a directory
 - `GET /api/directories` - List directories
 - `PUT /api/directories/{id}` - Update directory
 - `DELETE /api/directories/{id}` - Delete directory
 
 ### Submissions
+
 - `POST /api/submissions` - Create single submission
 - `POST /api/submissions/bulk` - Bulk submit
 - `GET /api/submissions` - List submissions
@@ -205,12 +211,14 @@ See [OLLAMA.md](OLLAMA.md) for more details on the local setup.
 ## Tech Stack
 
 ### Backend
+
 - FastAPI - API framework
 - SQLAlchemy - ORM
 - Browser Use SDK - AI browser automation
 - PostgreSQL - Database
 
 ### Frontend
+
 - React 19 - UI framework
 - Vite - Build tool
 - Tailwind CSS - Styling
@@ -219,10 +227,12 @@ See [OLLAMA.md](OLLAMA.md) for more details on the local setup.
 ## Troubleshooting
 
 ### Browser Use API errors
+
 - Verify your API key is correct in `.env`
 - Check your account has available credits
 
 ### Database connection errors
+
 ```bash
 # Ensure PostgreSQL is running
 pg_isready
@@ -231,6 +241,7 @@ pg_isready
 ```
 
 ### Form submission failures
+
 - Check the submission logs in the dashboard
 - Some directories may have CAPTCHAs or rate limits
 - Try reducing `CONCURRENT_SUBMISSIONS`
@@ -239,4 +250,3 @@ pg_isready
 
 - [ ] Webhook notifications
 - [ ] Analytics and reporting
-
