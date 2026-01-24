@@ -40,7 +40,6 @@ DATABASE_URL=postgresql://postgres:password@localhost:5432/directory_agent
 
 # Browser Use Cloud (my primary solution)
 USE_BROWSER_USE_CLOUD=true
-USE_BROWSER_USE=true
 BROWSER_USE_API_KEY=your-api-key-here
 
 # Security
