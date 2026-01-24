@@ -6,14 +6,14 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Database
-    DATABASE_URL: str = "postgresql://postgres:root@localhost:5432/directory_agent"
+    DATABASE_URL: str
 
     # Ollama Configuration (Local AI - Legacy, not used with cloud)
-    OLLAMA_HOST: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "qwen2.5vl:latest"
+    OLLAMA_HOST: str
+    OLLAMA_MODEL: str
 
     # Browser Use Cloud Configuration
-    BROWSER_USE_API_KEY: str = ""  # Set in .env
+    BROWSER_USE_API_KEY: str # Set in .env
     USE_BROWSER_USE_CLOUD: bool = True  # Use cloud instead of local
 
     # Application
@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     # Authentication
-    SECRET_KEY: str = "PL3T6_LW0ElW268NtP0NOazCMTPGRhXVp_rQGQNXgrs="
+    SECRET_KEY: str = ""
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -37,7 +37,6 @@ class Settings(BaseSettings):
     # Browser Automation
     HEADLESS_BROWSER: bool = True
     BROWSER_TIMEOUT: int = 30000
-    USE_BROWSER_USE: bool = True  # Use Browser Use library for AI-powered automation
 
     # AI Settings
     AI_TEMPERATURE: float = 0.1

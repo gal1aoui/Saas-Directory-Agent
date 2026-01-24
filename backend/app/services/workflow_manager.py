@@ -60,7 +60,7 @@ class WorkflowManager:
 
         try:
             # Choose strategy based on configuration
-            if settings.USE_BROWSER_USE:
+            if settings.USE_BROWSER_USE_CLOUD:
                 return await self.browser_use_strategy.execute_submission(
                     submission, saas_product, directory, self.db
                 )
