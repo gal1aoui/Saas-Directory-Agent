@@ -75,7 +75,7 @@ class AIFormReader:
         self, screenshot_path: str, html_content: Optional[str] = None
     ) -> Dict:
         """
-        Analyze a form from HTML content (screenshot analysis not needed with Mistral).
+        Analyze a form from HTML content (screenshot analysis not needed with Qwen2.5vl).
         For screenshot analysis, use OCR or convert to HTML first.
         Returns detected fields with their properties.
         """
