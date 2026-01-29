@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { SubmissionStatus } from "../../types/schema";
+import type { SubmissionStatus } from "@/types/models/enums";
 
 interface SubmissionFiltersProps {
   statusFilter: SubmissionStatus | "all";

@@ -1,6 +1,6 @@
+import type { SubmissionStatus } from "@/types/models/enums";
 import { AlertCircle, CheckCircle, Clock, Send, XCircle } from "lucide-react";
 import type React from "react";
-import type { SubmissionStatus } from "../../types/schema";
 
 interface StatusIconProps {
   status: SubmissionStatus;
