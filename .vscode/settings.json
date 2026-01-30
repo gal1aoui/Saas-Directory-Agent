@@ -12,5 +12,5 @@
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
 
-  "mypy.dmypyExecutable": "backend/venv/Scripts/dmypy.exe"
+  "mypy.dmypyExecutable": "${workspaceFolder}\\backend\\venv\\Scripts\\dmypy.exe"
 }
